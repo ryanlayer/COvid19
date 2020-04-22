@@ -1,4 +1,4 @@
-# colorado_covid19
+# COvid19
 Providing social distancing situational awareness during the COVID-19 pandemic in Colorado
 
 - Set up conda environment
