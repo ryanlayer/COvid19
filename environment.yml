@@ -1,0 +1,15 @@
+name: COvid19
+channels:
+  - bioconda
+  - defaults
+dependencies:
+  - python=3.6
+  - geopandas
+  - scipy
+  - matplotlib
+  - descartes
+  - cython
+  - statsmodels
+  - pip
+  - pip:
+      - sklearn
