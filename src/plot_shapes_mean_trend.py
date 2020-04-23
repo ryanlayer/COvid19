@@ -190,12 +190,17 @@ T = []
 B_sum = []
 for shape in shapenames:
     if shape in B:
+
         B_s = B[shape]
         C_s = C[shape]
         baseline_mean = np.array([np.mean(b) for b in B_s])
         B_sum.append(np.sum(baseline_mean))
+
         baseline_mean_norm =  \
             (baseline_mean - np.min(baseline_mean))/ np.max(baseline_mean)
+        if len(B_s) == 1:
+            baseline_mean_norm = np.array([1.0])
+
 
         T_s = []
         for i in range(len(C_s)):

@@ -82,7 +82,8 @@ def label_days(ax, header):
 
 def show_legend(ax):
     ax.legend(frameon=False,
-              loc=0,
+              bbox_to_anchor=(0.95,0.7),
+              loc='center left',
               fontsize=4)
 
 def mark_weeks(ax, header):
@@ -146,6 +147,7 @@ crisis_header = None
 B = []
 C = []
 M = []
+row_i = 1
 for row in input_file:
     if header is None:
         header = row
@@ -153,8 +155,6 @@ for row in input_file:
         continue
 
     if args.shapename is None or row[shape_i] == args.shapename:
-
-        O = row[0:3] 
 
         b = row[baseline_range['start']:baseline_range['end']]
         b = [float(x) for x in b]
@@ -164,14 +164,13 @@ for row in input_file:
         c = row[crisis_range['start']:]
         c = [float(x) for x in c]
 
-        week_i = 0
         crisis_week_means = get_week_means(c)
 
         means = baseline_mean + crisis_week_means
 
         M.append(means)
 
-        o = row[0:3]
+        o = [row_i] + row[0:3]
         for i in range(1,len(means)):
             o.append(np.log2(means[i]/means[i-1]))
 
@@ -179,6 +178,8 @@ for row in input_file:
 
         B.append([float(x) for x in b])
         C.append([float(x) for x in c])
+
+        row_i += 1
 
 if args.outfile is None:
     sys.exit(0)

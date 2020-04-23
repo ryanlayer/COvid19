@@ -157,11 +157,13 @@ parser.add_argument('--weeks',
                     default='1,2',
                     help='Weeks CSV (default 1,2)')
 
-parser.add_argument('--x_label',
+parser.add_argument('-x',
+                    '--x_label',
                     dest='x_label',
                     help='X-axsis label')
 
-parser.add_argument('--y_label',
+parser.add_argument('-y',
+                    '--y_label',
                     dest='y_label',
                     help='Y-axsis label')
 
