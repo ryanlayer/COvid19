@@ -125,6 +125,7 @@ crisis_header = None
 B = []
 C = []
 M = []
+row_i = 0
 for row in input_file:
     if header is None:
         header = row
@@ -144,8 +145,9 @@ for row in input_file:
         s  = result_mul.seasonal
         t  = result_mul.trend
 
-        O = row[0:3] + [t[0]-t[-1], max(t)-min(t)]
+        O = [row_i] + row[0:3] + [t[0]-t[-1], max(t)-min(t)]
         print('\t'.join([str(o) for o in O]))
+        row_i += 1
 
 if args.outfile is None:
     sys.exit(0)

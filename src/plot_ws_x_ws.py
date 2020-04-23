@@ -36,7 +36,7 @@ def get_ws(scores, header):
 
     return wd_u,we_u,ws
 
-def clear_ax(ax):
+def clear_ax(ax, x_label, y_label):
     ax.spines['top'].set_visible(False)
     ax.spines['bottom'].set_visible(False)
     ax.spines['left'].set_visible(False)
@@ -46,14 +46,8 @@ def clear_ax(ax):
     ax.yaxis.set_tick_params(width=0.25, labelsize=5)
     ax.xaxis.set_tick_params(width=0.25, labelsize=5)
 
-    ax.set_xlabel('Baseline ws', fontsize=6)
-    ax.set_ylabel('Week 1 ws', fontsize=6)
-
-    #ax.set_xlabel('Week 1 ws', fontsize=6)
-    #ax.set_ylabel('Week 2 ws', fontsize=6)
-
-    #ax.set_xlabel('Week 2 ws', fontsize=6)
-    #ax.set_ylabel('Week 3 ws', fontsize=6)
+    ax.set_xlabel(x_label, fontsize=6)
+    ax.set_ylabel(y_label, fontsize=6)
 
     ax.axvline(x=0,lw=0.25, c='black')
     ax.axhline(y=0,lw=0.25, c='black')
@@ -68,6 +62,30 @@ parser.add_argument('-i',
 parser.add_argument('-o',
                     dest='outfile',
                     help='Output file name')
+
+parser.add_argument("--x_axis",
+                    dest="x_axis_i",
+                    type=int,
+                    required=True,
+                    help="Week for x-axsis ( 0 is baseline )")
+
+parser.add_argument("--y_axis",
+                    dest="y_axis_i",
+                    type=int,
+                    required=True,
+                    help="Week for y-axsis ( 0 is baseline )")
+
+parser.add_argument("-x",
+                    "--xlabel",
+                    dest="x_label",
+                    required=True,
+                    help="X axis label")
+
+parser.add_argument("-y",
+                    "--ylabel",
+                    dest="y_label",
+                    required=True,
+                    help="Y axis label")
 
 parser.add_argument('--alpha',
                     dest='alpha',
@@ -104,8 +122,8 @@ for row in input_file:
     b = row[baseline_range['start']:baseline_range['end']]
     b = [float(x) for x in b]
 
-    #BD.append(np.sqrt(np.mean(b)))
-    BD.append(np.mean(b))
+    BD.append(np.sqrt(np.mean(b)))
+    #BD.append(np.mean(b))
 
     c = row[crisis_range['start']:]
     c = [float(x) for x in c]
@@ -146,14 +164,10 @@ for i in range(len(B)):
         c_wss.append(c_ws)
         week_i += 1
 
-    X.append(b_ws)
-    Y.append(c_wss[0])
+    v = [b_ws] + c_wss
 
-    #X.append(c_wss[0])
-    #Y.append(c_wss[1])
-
-    #X.append(c_wss[1])
-    #Y.append(c_wss[2])
+    X.append(v[args.x_axis_i])
+    Y.append(v[args.y_axis_i])
 
     #draw_arrow(ax, c_wss[0], c_wss[1], c_wss[1], c_wss[2])
 
@@ -164,8 +178,6 @@ ax.set_xlim((-.75,1.75))
 
 diag_line, = ax.plot(ax.get_xlim(), ax.get_ylim(), ls="--", lw=0.5, c='red')
 
-
-clear_ax(ax)
-
+clear_ax(ax, args.x_label, args.y_label)
 
 plt.savefig(args.outfile,bbox_inches='tight')
