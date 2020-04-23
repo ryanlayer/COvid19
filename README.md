@@ -203,7 +203,14 @@ $ python src/slip_scores.py \
     --height 1.5
 ```
 
-![](imgs/colorado_ss_week1_week2.png)
+To track individual regions, we can visualize the slip score with respect to the region size. In the plots below, each point is a tile, and points from denser regions are to the right are. Points above the zero line have slipped into a more active state, and points below the line have become less active.
+
+
+| ![](imgs/colorado_ss_week1_week2.png) | ![](imgs/colorado_ss_week2_week3.png) |
+| --- | --- |
+
+*Slip scores from week 1 to week 2 (left) and from week 2 to week 3 (right). Positive values indicate an increase in week-to-week activity and negative values indicate a decrease.*
+
 ```
 $ python src/plot_split_x_density.py \
     -i colorado_city_scores.20200422.txt \
@@ -214,10 +221,7 @@ $ python src/plot_split_x_density.py \
     --weeks 1,2 \
     -x 'Baseline density' \
     -y 'Week 1 to week 2 slip' 
-```
 
-![](imgs/colorado_ss_week2_week3.png)
-```
 $ python src/plot_split_x_density.py \
     -i colorado_city_scores.20200422.txt \
     -o imgs/colorado_ss_week2_week3.png \
@@ -231,7 +235,14 @@ $ python src/plot_split_x_density.py \
 
 ## Trends
 
+Density data can be represented as a time series with repeating short-term
+patterns (seasons) and the overall value increases or decreases (trends). Using
+a model, we can decompose a series into its seasons and trends, which provides
+a means to compare tiles with different weekday/weekend activities (seasons).
+
 ![](imgs/colorado_example_season_trend_split.png)
+* Density data from four tiles decomposed into their patterns and trends.*
+
 ```
 $ python src/trends.py     -i colorado_city_scores.20200422.txt |  sort -t$'\t' -k 5,5g  | tail -n 2
 285	Denver	39.749433173953	-104.99633789062	88.32601055634723	88.32601055634723
@@ -247,7 +258,19 @@ $ python src/trends.py \
     --width 5 --height 4 > /dev/null
 ```
 
-![](imgs/Denver_trend.png)
+Even within a city, we can observe the differences in density dynamics between
+the business centers, which should be less dense during a stay-at-home order,
+and residential centers, which should be denser. To capture the overall trend
+of a city, we take the mean of each tile’s trend weighted by the tile’s
+baseline density.
+
+
+| ![](imgs/Denver_trend.png) | 
+| ![](imgs/Colorado_Springs_trend.png) |
+| --- |
+
+* Tile trends for two cities. Blue lines trend toward less density and red lines trend toward more. The line thickness corresponds to the tile’s baseline density. The black line is the mean trend weighted by population density.  *
+
 ```
 $ python src/plot_shape_trend.py \
     -i colorado_city_scores.20200422.txt \
@@ -256,10 +279,7 @@ $ python src/plot_shape_trend.py \
     --width 5 \
     --height 2 \
     --title "Denver"
-```
 
-![](imgs/Colorado_Springs_trend.png)
-```
 $ python src/plot_shape_trend.py  \
     -i colorado_city_scores.20200422.txt \
     --shapename "Colorado Springs" \
@@ -269,7 +289,11 @@ $ python src/plot_shape_trend.py  \
     --title "Colorado Springs"
 ```
 
+The mean trends for cities can be combined for a county-level view.
+
 ![](imgs/boulder_co_cities_mean_trends.png)
+
+*County-level trends. Each line is the weighted average for tiles trends in a city. Blue lines trend toward less density and red lines trend toward more. The line thickness corresponds to the tile’s baseline density.*
 ```
 $ boulder_co_cities="Boulder,Erie,Jamestown,Lafayette,Longmont,Louisville,Lyons,Nederland,Superior,Ward"
 $ python src/plot_shapes_mean_trend.py \
