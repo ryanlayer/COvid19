@@ -5,13 +5,26 @@ import matplotlib.pyplot as plt
 from statsmodels.tsa.seasonal import seasonal_decompose
 import argparse
 import csv
+import fb
+import collections
+from sklearn.linear_model import LinearRegression
 
+Window = collections.namedtuple('Window', 'index dayofweek')
 
 shape_i = 0
 baseline_range = {'start':3, 'end':24}
 crisis_range = {'start':24}
 
 #{{{
+
+def get_timepoints(header, vals, timepoint):
+    t_y = []
+    t_x = []
+    for j in range(len(header)):
+        if header[j].split(' ')[-1] == timepoint:
+            t_x.append(j)
+            t_y.append(vals[j])
+    return (t_x, t_y)
 
 def get_windows(header, window):
 
@@ -110,7 +123,11 @@ def label_days(ax, header):
     ax.set_xticklabels(labels, fontsize=4)
 
 def show_legend(ax):
-    ax.legend(frameon=False,
+    handles, labels = ax.get_legend_handles_labels()
+    by_label = dict(zip(labels, handles))
+    ax.legend(by_label.values(),
+              by_label.keys(),
+              frameon=False,
               bbox_to_anchor=(0.95,0.7),
               loc='center left',
               fontsize=4)
@@ -189,9 +206,9 @@ args = parser.parse_args()
 input_file = csv.reader(open(args.infile), delimiter='\t')
 header = None
 crisis_header = None
+L = []
 B = []
 C = []
-M = []
 row_i = 1
 windows = None
 for row in input_file:
@@ -201,34 +218,89 @@ for row in input_file:
         windows = get_windows(crisis_header, args.window)
         continue
 
-
     if args.shapename is None or row[shape_i] == args.shapename:
 
+        L.append(row[0:3])
+        
         b = row[baseline_range['start']:baseline_range['end']]
         b = [float(x) for x in b]
 
-        baseline_mean = get_week_means(b)
-
         c = row[crisis_range['start']:]
         c = [float(x) for x in c]
-
-        crisis_week_means = get_week_means(c)
-
-        means = baseline_mean + crisis_week_means
-
-        M.append(means)
-
-        o = [row_i] + row[0:3]
-        for i in range(1,len(means)):
-            o.append(np.log2(means[i]/means[i-1]))
-
-        if not args.quiet:
-            print('\t'.join([str(x) for x in o]))
 
         B.append([float(x) for x in b])
         C.append([float(x) for x in c])
 
         row_i += 1
+
+# get a model for the stdev based on size
+C_stats = []
+
+for c in C:
+    C_stats.append( ( np.mean(c), np.std(c) ) )
+
+model = LinearRegression()
+x=[[c[0]] for c in C_stats]
+y=[[c[1]] for c in C_stats]
+model.fit(x,y)
+
+C_plot_stats = []
+
+c_i = 0
+for c in C:
+    
+    c_stats = {}
+
+    dow_stats = {}
+
+    for w in windows:
+        start_day = w[0][1]
+        start = w[0][0]
+        end = w[1][0]
+        if start_day not in dow_stats:
+            dow_stats[start_day] = []
+
+        curr = c[start:end] 
+        mean = np.mean(curr)
+        stdev = np.std(curr)
+
+        dow_stats[start_day].append((mean,stdev))
+
+    c_stats['dow_stats'] = dow_stats
+
+    Z_x = []
+    Z_y = []
+
+    window_means = [] 
+    window_stdevs = [] 
+
+    for w in windows:
+        start_day = w[0][1]
+        start = w[0][0]
+        end = w[1][0]
+
+        curr = c[start:end] 
+        mean = np.mean(curr)
+        stdev = model.predict([[mean]])[0][0]
+
+        window_means.append(mean)
+        window_stdevs.append(stdev)
+
+        z = (mean - dow_stats[start_day][0][0] ) / stdev
+        Z_x.append((start+end)/2)
+        Z_y.append(z)
+
+    c_stats['window_means'] = window_means
+    c_stats['window_stdevs'] = window_stdevs
+
+    c_stats['Z_x'] = Z_x
+    c_stats['Z_y'] = Z_y
+
+    O = [c_i] + L[c_i] + [Z_y[-1]]
+    print('\t'.join([str(o) for o in O]))
+
+    C_plot_stats.append(c_stats)
+    c_i += 1
 
 if args.outfile is None:
     sys.exit(0)
@@ -238,7 +310,7 @@ if args.n:
     if args.n == '-1':
         to_plot = range(len(B))
     else:
-        to_plot = [int(x)-1 for x in args.n.split(',')]
+        to_plot = [int(x) for x in args.n.split(',')]
 
 
 fig = plt.figure(figsize=(args.width,args.height), dpi=300)
@@ -249,6 +321,7 @@ cols=1
 outer_grid = gridspec.GridSpec(rows, cols, wspace=0.0, hspace=0.1)
 
 
+print(to_plot)
 plot_i = 0
 for i in to_plot:
     inner_grid = gridspec.GridSpecFromSubplotSpec(\
@@ -261,56 +334,32 @@ for i in to_plot:
     ax = fig.add_subplot(inner_grid[0])
 
     ax.plot([],[])
+
     ax.plot(range(len(C[i])),
             C[i],
             lw=0.5,
-            label='current',
+            label='Current',
             alpha=0.5)
 
     ax2 = ax.twinx()
 
-    window_stats = []
+    dow_stats = C_plot_stats[i]['dow_stats']
 
-    dow_stats = {}
-    for w in windows:
-        start_day = w[0][1]
-        start = w[0][0]
-        end = w[1][0]
-        if start_day not in dow_stats:
-            dow_stats[start_day] = []
+    for j in range(len(windows)):
+        start_day = windows[j][0][1]
+        start = windows[j][0][0]
+        end = windows[j][1][0]
 
-        curr =C[i][start:end] 
-        mean = np.mean(curr)
-        stdev = np.std(curr)
+        mean = C_plot_stats[i]['window_means'][j]
+        stdev = C_plot_stats[i]['window_stdevs'][j]
 
-        dow_stats[start_day].append((mean,stdev))
-
-    Z_x = []
-    Z_y = []
-
-    for w in windows:
-        start_day = w[0][1]
-        start = w[0][0]
-        end = w[1][0]
-
-        curr =C[i][start:end] 
-        mean = np.mean(curr)
-
-        for other_mean,stdev in dow_stats[start_day]:
-            c='black'
-            #point1 = [start-0.5, other_mean]
-            #point2 = [end-1+0.5, other_mean]
-            #x_values = [point1[0], point2[0]]
-            #y_values = [point1[1], point2[1]]
-            #ax.plot(x_values, y_values, c=c, lw=0.5)
-            ax.plot([(start+end)/2],[other_mean],'o',c=c,markersize=0.5)
 
         c='black'
-        point1 = [(start+end)/2, max([x[0] for x in dow_stats[start_day]])]
-        point2 = [(start+end)/2, min([x[0] for x in dow_stats[start_day]])]
+        point1 = [(start+end)/2, mean + stdev]
+        point2 = [(start+end)/2, mean - stdev]
         x_values = [point1[0], point2[0]]
         y_values = [point1[1], point2[1]]
-        ax.plot(x_values, y_values, c=c, lw=0.5)
+        ax.plot(x_values, y_values, c=c, lw=0.5, label='Curr mean')
 
         c='black'
         point1 = [start-0.5, mean]
@@ -319,26 +368,16 @@ for i in to_plot:
         y_values = [point1[1], point2[1]]
         ax.plot(x_values, y_values, c=c, lw=0.5)
 
-        c = 'red'
-        dow_mean = np.mean( [ x[0] for x in dow_stats[start_day]] )
-        dow_std = np.std( [ x[0] for x in dow_stats[start_day]] )
-        z = (mean - dow_mean) / dow_std
-        Z_x.append((start+end)/2)
-        Z_y.append(z)
-        #ax2.plot([(start+end)/2],[z],'o',marker='x',c=c,markersize=1)
-    ax2.plot(Z_x,Z_y,'-o',marker='x',c=c,markersize=1)
+        c='red'
+        point1 = [start-0.5, dow_stats[start_day][0][0]]
+        point2 = [end-1+0.5, dow_stats[start_day][0][0]]
+        x_values = [point1[0], point2[0]]
+        y_values = [point1[1], point2[1]]
+        ax.plot(x_values, y_values, c=c, lw=0.5, label='Week 1 mean')
 
-    print(Z_y[-1] - Z_y[-2])
-
-#    week_i = 0
-#    curr_x = 0
-#    for j in range(0,len(crisis_header),21):
-#        c_header = crisis_header[j:j+21]
-#        c_vals = C[i][j:j+21]
-#        if len(c_header) < 21:
-#            continue
-#        curr_x = plot_ss(ax, c_header, np.mean(c_vals),curr_x)
-#        week_i += 1
+    Z_x = C_plot_stats[i]['Z_x']
+    Z_y = C_plot_stats[i]['Z_y']
+    ax2.plot(Z_x,Z_y,'-o',marker='x',c='blue',lw=0.75,markersize=1,label='Z-score')
 
     ax.set_ylabel('Density', fontsize=4)
 
