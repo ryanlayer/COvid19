@@ -6,19 +6,24 @@ from dash.dependencies import Input, Output
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import plotly.express as px
+import numpy as np
 
 import pandas as pd
 
+#external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
+external_stylesheets = [dbc.themes.BOOTSTRAP]
+default_point_color = '#69A0CB'
+
+app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
 def get_map(lat, lon):
     mapbox_access_token = open(".mapbox_token").read()
 
-    fig = go.Figure(go.Scattermapbox( lat=[lat],
-                                      lon=[lon],
-                                      mode='markers',
-                                      marker=go.scattermapbox.Marker( size=14,color='red')
-
-    ))
+    fig = go.Figure(go.Scattermapbox(\
+            lat=[lat],
+            lon=[lon],
+            mode='markers',
+            marker=go.scattermapbox.Marker( size=14,color='red') ))
 
     fig.update_layout(
         hovermode='closest',
@@ -51,46 +56,6 @@ def make_ws_hists(num_weeks, ws_df):
     return fig
 
 
-ss_df = pd.read_csv('slip.csv')
-ws_df = pd.read_csv('ws.csv')
-
-y_min = ss_df.iloc[:,5:].min().min()
-y_max = ss_df.iloc[:,5:].max().max()
-
-#external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
-external_stylesheets = [dbc.themes.BOOTSTRAP]
-default_point_color = '#69A0CB'
-
-app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
-
-
-num_weeks = len(ss_df.columns[5:])
-pretty_weeks = ['Week ' + str(i+1) for i in range(num_weeks)]
-
-hists = make_ws_hists(num_weeks, ws_df)
-
-app.layout = html.Div([
-    dbc.Col([
-        dbc.Row( [
-            dbc.Col( dcc.Graph(id='map',figure=get_map(40.588928, -112.071533)))
-        ]),
-        dbc.Row([
-            dbc.Col(dcc.Graph(id='weekend_hist'), width=4),
-            dbc.Col(dcc.Graph(id='weekend_score'), width=4),
-            dbc.Col(dcc.Graph(id='slip_score'), width=4)
-        ],no_gutters=True,),
-        dbc.Row( [
-            dbc.Col(dcc.Slider(id='week-slider',
-                               min=0,
-                               max=num_weeks-1,
-                               value=num_weeks-1,
-                               marks={i:pretty_weeks[i] for i in range(num_weeks)},
-                               step=None)),
-        ]),
-    ])
-])
-
-
 @app.callback(
     Output('map', 'figure'),
     [Input('weekend_score', 'clickData'),
@@ -112,7 +77,6 @@ def map_callback(ws_data,ss_data):
 
     return get_map(lon, lat)
 
-
 def move_index_to_end(X,Y,df_indexes,index):
     x_val = X[index]
     y_val = Y[index]
@@ -124,7 +88,6 @@ def move_index_to_end(X,Y,df_indexes,index):
     Y.append(y_val)
     df_indexes.append(df_index_val)
     return X, Y, df_indexes
-
 
 @app.callback(
     [Output('slip_score', 'figure'),
@@ -141,7 +104,8 @@ def update_scatter_plots(selected_col_i,ss_data,ws_data):
     elif ctx.triggered[0]['prop_id'] == 'slip_score.clickData':
         point_index = int(ss_data['points'][0]['customdata'])
 
-    return slip_score_callback(selected_col_i,ss_data,point_index), weekend_score_callback(selected_col_i,ws_data,point_index)
+    return slip_score_callback(selected_col_i,ss_data,point_index),  \
+           weekend_score_callback(selected_col_i,ws_data,point_index)
 
 
 def slip_score_callback(selected_col_i,ss_data,point_index):
@@ -185,7 +149,6 @@ def slip_score_callback(selected_col_i,ss_data,point_index):
         )
     }
 
-
 def weekend_score_callback(selected_col_i,ws_data,point_index):
     ws_weeks = ws_df.columns[6:]
     selected_col = ws_weeks[selected_col_i]
@@ -224,17 +187,80 @@ def weekend_score_callback(selected_col_i,ws_data,point_index):
         )
     }
 
-
 @app.callback(
     Output('weekend_hist', 'figure'),
     [Input('week-slider', 'value')])
 def make_ws_hist(selected_col_i):
     ws_weeks = ws_df.columns[6:]
     selected_col = ws_weeks[selected_col_i]
-    return { 'data' : [
-            { 'x' :ws_df[selected_col],
-              'type': 'histogram' }
-            ]}
+    return { 'data' : [{ 'x' :ws_df[selected_col], 'type': 'histogram' } ]}
+
+
+def make_trend():
+    dow_date_time= [ x.split()[1:] for x in trend_df.columns[6:]]
+    date_time = [x[1:] for x in dow_date_time]
+
+    b = np.array(trend_df.baseline_density.tolist())
+    b_norm = 1 + (5*((b - np.min(b)) / np.max(b)))
+
+    fig = go.Figure()
+
+    for idx,row in trend_df.iterrows():
+        y = row.tolist()[6:]
+        x = [i for i in range(len(y))]
+        loc = str(row.lat) + ',' + str(row.lon)
+        fig.add_trace(go.Scatter(x=x,
+                                 y=y,
+                                 text=loc,
+                                 opacity=0.5,
+                                 line=dict(width=b_norm[idx],
+                                           color=default_point_color)))
+        if idx == 100:
+            break
+
+    fig.update_layout(showlegend=False)
+    return fig
+
+
+ss_df = pd.read_csv('slip.csv')
+ws_df = pd.read_csv('ws.csv')
+trend_df = pd.read_csv('trend.csv')
+
+y_min = ss_df.iloc[:,5:].min().min()
+y_max = ss_df.iloc[:,5:].max().max()
+
+
+num_weeks = len(ss_df.columns[5:])
+pretty_weeks = ['Week ' + str(i+1) for i in range(num_weeks)]
+
+hists = make_ws_hists(num_weeks, ws_df)
+
+marks={i:pretty_weeks[i] for i in range(num_weeks)}
+
+app.layout = html.Div([
+    dbc.Col([
+        dbc.Row( [
+            dbc.Col( dcc.Graph(id='map',
+                               figure=get_map(40.588928, -112.071533)))
+        ]),
+        dbc.Row([
+            dbc.Col(dcc.Graph(figure=make_trend()))
+        ]),
+        dbc.Row([
+            dbc.Col(dcc.Graph(id='weekend_hist'), width=4),
+            dbc.Col(dcc.Graph(id='weekend_score'), width=4),
+            dbc.Col(dcc.Graph(id='slip_score'), width=4)
+        ],no_gutters=True,),
+        dbc.Row( [
+            dbc.Col(dcc.Slider(id='week-slider',
+                               min=0,
+                               max=num_weeks-1,
+                               value=num_weeks-1,
+                               marks=marks,
+                               step=None)),
+        ]),
+    ])
+])
 
 
 if __name__ == '__main__':
