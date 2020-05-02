@@ -99,6 +99,13 @@ parser.add_argument('--shapename',
                     dest='shapename',
                     help='Shape to plot')
 
+parser.add_argument('--delim',
+                    dest='delim',
+                    type=str,
+                    default='\t',
+                    help='Output delimiter (default tab)')
+
+
 parser.add_argument('-n',
                     dest='n',
                     type=str,
@@ -126,6 +133,7 @@ B = []
 C = []
 M = []
 row_i = 0
+out_header = False
 for row in input_file:
     if header is None:
         header = row
@@ -133,6 +141,10 @@ for row in input_file:
         continue
 
     if args.shapename is None or row[shape_i] == args.shapename:
+
+        b = row[baseline_range['start']:baseline_range['end']]
+        b = [float(x) for x in b]
+        B.append(b)
 
         c = row[crisis_range['start']:]
         c = [float(x) for x in c]
@@ -144,9 +156,23 @@ for row in input_file:
                                         extrapolate_trend='freq')
         s  = result_mul.seasonal
         t  = result_mul.trend
+        t  = np.array(result_mul.trend)
+        t = t - t[0]
 
-        O = [row_i] + row[0:3] + [t[0]-t[-1], max(t)-min(t)]
-        print('\t'.join([str(o) for o in O]))
+        if not out_header:
+            h = ['index',
+                 'name',
+                 'lon',
+                 'lat',
+                 'baseline_density'] + crisis_header
+            print(args.delim.join(h))
+            out_header = True
+
+
+
+        #O = [row_i] + row[0:3] + [t[-1], max(t)-min(t), np.mean(b)]
+        O = [row_i] + row[0:3] + [np.mean(b)] + t.tolist()
+        print(args.delim.join([str(o) for o in O]))
         row_i += 1
 
 if args.outfile is None:
@@ -225,10 +251,6 @@ for i in to_plot:
 
     if i == to_plot[-1]:
         label_days(ax, crisis_header)
-
-
-
-
 
     plot_i += 1
 
