@@ -9,6 +9,7 @@ import plotly.express as px
 
 import pandas as pd
 
+
 def get_map(lat, lon):
     mapbox_access_token = open(".mapbox_token").read()
 
@@ -34,6 +35,7 @@ def get_map(lat, lon):
 
     return fig
 
+
 def make_ws_hists(num_weeks, ws_df):
     fig = make_subplots(rows=1, cols=num_weeks)
     ws_weeks = ws_df.columns[6:]
@@ -56,7 +58,7 @@ y_max = ss_df.iloc[:,5:].max().max()
 
 #external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 external_stylesheets = [dbc.themes.BOOTSTRAP]
-
+default_point_color = '#69A0CB'
 
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
@@ -92,7 +94,7 @@ app.layout = html.Div([
     Output('map', 'figure'),
     [Input('weekend_score', 'clickData'),
     Input('slip_score', 'clickData')])
-def map_call_back(ws_data,ss_data):
+def map_callback(ws_data,ss_data):
     lon = 40.588928
     lat = -112.071533
 
@@ -101,36 +103,77 @@ def map_call_back(ws_data,ss_data):
     if not ctx.triggered:
         button_id = 'No clicks yet'
     elif ctx.triggered[0]['prop_id'] == 'weekend_score.clickData':
-        lon = ws_df.iloc[int(ws_data['points'][0]['pointNumber']),:]['lon']
-        lat = ws_df.iloc[int(ws_data['points'][0]['pointNumber']),:]['lat']
+        lon = ws_df.iloc[int(ws_data['points'][0]['customdata']),:]['lon']
+        lat = ws_df.iloc[int(ws_data['points'][0]['customdata']),:]['lat']
     else:
-        lon = ss_df.iloc[int(ss_data['points'][0]['pointNumber']),:]['lon']
-        lat = ss_df.iloc[int(ss_data['points'][0]['pointNumber']),:]['lat']
+        lon = ss_df.iloc[int(ss_data['points'][0]['customdata']),:]['lon']
+        lat = ss_df.iloc[int(ss_data['points'][0]['customdata']),:]['lat']
 
     return get_map(lon, lat)
 
 
+def move_index_to_end(X,Y,df_indexes,index):
+    x_val = X[index]
+    y_val = Y[index]
+    df_index_val = df_indexes[index]
+    del X[index]
+    del Y[index]
+    del df_indexes[index]
+    X.append(x_val)
+    Y.append(y_val)
+    df_indexes.append(df_index_val)
+    return X, Y, df_indexes
+
 
 @app.callback(
-    Output('slip_score', 'figure'),
-    [Input('week-slider', 'value')])
-def slip_score(selected_col_i):
+    [Output('slip_score', 'figure'),
+    Output('weekend_score', 'figure')],
+    [Input('week-slider', 'value'),
+    Input('slip_score', 'clickData'),
+    Input('weekend_score', 'clickData')])
+def update_scatter_plots(selected_col_i,ss_data,ws_data):
+    ctx = dash.callback_context
+
+    point_index = -1
+    if ctx.triggered[0]['prop_id'] == 'weekend_score.clickData':
+        point_index = int(ws_data['points'][0]['customdata'])
+    elif ctx.triggered[0]['prop_id'] == 'slip_score.clickData':
+        point_index = int(ss_data['points'][0]['customdata'])
+
+    return slip_score_callback(selected_col_i,ss_data,point_index), weekend_score_callback(selected_col_i,ws_data,point_index)
+
+
+def slip_score_callback(selected_col_i,ss_data,point_index):
     slip_weeks = ss_df.columns[5:]
     selected_col = slip_weeks[selected_col_i]
-
+    df_indexes = list(range(ss_df.shape[0]))
+    point_color = default_point_color
     filtered_df = ss_df[['baseline_density',selected_col]]
+
+    X = list(filtered_df['baseline_density'])
+    Y = list(filtered_df[selected_col])
+    df_indexes = list(range(len(X)))
+
+    if point_index != -1:
+        point_color = 'red'
+        # move the point of interest to the end so it displays on top
+        X,Y,df_indexes = move_index_to_end(X,Y,df_indexes,point_index)
+
+    marker_colors = [default_point_color] * len(X)
+    marker_colors[-1] = point_color
     traces = []
     traces.append(dict(
-        x=filtered_df['baseline_density'],
-        y=filtered_df[selected_col],
+        x=X,
+        y=Y,
+        customdata=df_indexes,
         mode='markers',
         opacity=0.7,
         marker={
             'size': 15,
-            'line': {'width': 0.5, 'color': 'white'}
+            'line': {'width': 0.5, 'color': 'white'},
+            'color': marker_colors
         },
     ))
-
     return {
         'data': traces,
         'layout': dict(
@@ -141,25 +184,35 @@ def slip_score(selected_col_i):
         )
     }
 
-@app.callback(
-    Output('weekend_score', 'figure'),
-    [Input('week-slider', 'value')])
-def weekend_score(selected_col_i):
+
+def weekend_score_callback(selected_col_i,ws_data,point_index):
     ws_weeks = ws_df.columns[6:]
     selected_col = ws_weeks[selected_col_i]
+    point_color = default_point_color
+    X = list(ws_df['baseline_ws'])
+    Y = list(ws_df[selected_col])
+    df_indexes = list(range(len(X)))
+
+    if point_index != -1:
+        point_color = 'red'
+        # move the point of interest to the end so it displays on top
+        X,Y,df_indexes = move_index_to_end(X,Y,df_indexes,point_index)
 
     traces = []
+    marker_colors = [default_point_color] * len(ws_df[selected_col])
+    marker_colors[-1] = point_color
     traces.append(dict(
-        x=ws_df['baseline_ws'],
-        y=ws_df[selected_col],
+        x=X,
+        y=Y,
+        customdata=df_indexes,
         mode='markers',
         opacity=0.7,
         marker={
             'size': 15,
-            'line': {'width': 0.5, 'color': 'white'}
+            'line': {'width': 0.5, 'color': 'white'},
+            'color':marker_colors
         },
     ))
-
     return {
         'data': traces,
         'layout': dict(
@@ -169,6 +222,7 @@ def weekend_score(selected_col_i):
             transition = {'duration': 500},
         )
     }
+
 
 @app.callback(
     Output('weekend_hist', 'figure'),
