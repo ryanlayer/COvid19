@@ -16,7 +16,8 @@ def get_map(lat, lon):
     fig = go.Figure(go.Scattermapbox( lat=[lat],
                                       lon=[lon],
                                       mode='markers',
-                                      marker=go.scattermapbox.Marker( size=14),
+                                      marker=go.scattermapbox.Marker( size=14,color='red')
+
     ))
 
     fig.update_layout(
