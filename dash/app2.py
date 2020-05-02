@@ -69,7 +69,7 @@ hists = make_ws_hists(num_weeks, ws_df)
 app.layout = html.Div([
     dbc.Col([
         dbc.Row( [
-            dbc.Col( dcc.Graph(figure=get_map(40.588928, -112.071533)))
+            dbc.Col( dcc.Graph(id='map',figure=get_map(40.588928, -112.071533)))
         ]),
         dbc.Row([
             dbc.Col(dcc.Graph(id='weekend_hist'), width=4),
@@ -86,6 +86,29 @@ app.layout = html.Div([
         ]),
     ])
 ])
+
+
+@app.callback(
+    Output('map', 'figure'),
+    [Input('weekend_score', 'clickData'),
+    Input('slip_score', 'clickData')])
+def map_call_back(ws_data,ss_data):
+    lon = 40.588928
+    lat = -112.071533
+
+    ctx = dash.callback_context
+
+    if not ctx.triggered:
+        button_id = 'No clicks yet'
+    elif ctx.triggered[0]['prop_id'] == 'weekend_score.clickData':
+        lon = ws_df.iloc[int(ws_data['points'][0]['pointNumber']),:]['lon']
+        lat = ws_df.iloc[int(ws_data['points'][0]['pointNumber']),:]['lat']
+    else:
+        lon = ss_df.iloc[int(ss_data['points'][0]['pointNumber']),:]['lon']
+        lat = ss_df.iloc[int(ss_data['points'][0]['pointNumber']),:]['lat']
+
+    return get_map(lon, lat)
+
 
 
 @app.callback(
@@ -153,12 +176,9 @@ def weekend_score(selected_col_i):
 def make_ws_hist(selected_col_i):
     ws_weeks = ws_df.columns[6:]
     selected_col = ws_weeks[selected_col_i]
-    #h = go.Histogram(x=ws_df[selected_col],
-                     #name='Week ' + str(selected_col_i + 1))
-    #fig = go.Figure(data=[h])
-    return { 'data' : [ 
-            { 'x' :ws_df[selected_col], 
-              'type': 'histogram' } 
+    return { 'data' : [
+            { 'x' :ws_df[selected_col],
+              'type': 'histogram' }
             ]}
 
 
