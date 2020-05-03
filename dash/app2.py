@@ -84,20 +84,6 @@ def get_map(lats, lons, lat, lon, indexes):
     return fig
 
 
-def make_ws_hists(num_weeks, ws_df):
-    fig = make_subplots(rows=1, cols=num_weeks)
-    ws_weeks = ws_df.columns[6:]
-
-    week_i = 1
-    for week in ws_weeks:
-        h = go.Histogram(x=ws_df[week],
-                         name='Week ' + str(week_i))
-        fig.append_trace( h, 1, week_i)
-
-        week_i += 1
-    return fig
-
-
 def move_index_to_end(items,index):
     val = items[index]
     del items[index]
@@ -260,26 +246,43 @@ def weekend_score_callback(selected_col_i,ws_data,point_indexes):
 
 
 @app.callback(
-    Output('weekend_hist', 'figure'),
+    Output('weekend_scatter', 'figure'),
     [Input('week-slider', 'value')])
 def make_ws_hist(selected_col_i):
     ws_weeks = ws_df.columns[6:]
-    selected_col = ws_weeks[selected_col_i]
-    x_label = 'Week ' + str(selected_col_i+1) + ' weekend score'
-    return {
-        'data' : [
-            {
-                'x'   : ws_df[selected_col],
-                'type': 'histogram'
-            }
-        ],
-        'layout': {
-            'margin':{'t':10,'b':50,'r':0,'l':50},
-            'xaxis' : {'title': x_label},
-            'yaxis' : {'title': 'Frequency'}
-        }
-    }
+    y = ws_df[ws_weeks[selected_col_i]]
+    x = ws_df[ws_weeks[selected_col_i-1]]
+    fig = px.scatter(x=x,y=y)
+    fig.update_layout(margin={"r":0,"t":0,"l":0,"b":0},
+    xaxis_title="Week " + str(selected_col_i),
+    yaxis_title="Week " + str(selected_col_i+1))
+    return fig
 
+@app.callback(
+    Output('weekend_hist_y', 'figure'),
+    [Input('week-slider', 'value')])
+def make_ws_hist(selected_col_i):
+    ws_weeks = ws_df.columns[6:]
+    y = ws_df[ws_weeks[selected_col_i]]
+    fig = go.Figure(data=[go.Histogram(y=y)])
+    fig.update_yaxes(showticklabels=False)
+    fig.update_yaxes(tickfont=dict(color='white'))
+    fig.update_xaxes(tickfont=dict(color='white'))
+    fig.update_layout(margin={"r":0,"t":0,"l":0,"b":0},xaxis_title=" ")
+    return fig
+
+@app.callback(
+    Output('weekend_hist_x', 'figure'),
+    [Input('week-slider', 'value')])
+def make_ws_hist(selected_col_i):
+    ws_weeks = ws_df.columns[6:]
+    x = ws_df[ws_weeks[selected_col_i-1]]
+    fig = go.Figure(data=[go.Histogram(x=x)])
+    fig.update_yaxes(tickfont=dict(color='white'))
+    fig.update_xaxes(tickfont=dict(color='white'))
+    fig.update_xaxes(showticklabels=False)
+    fig.update_layout(margin={"r":0,"t":0,"l":0,"b":0},yaxis_title=" ")
+    return fig
 
 def make_base_trend_plot(session_id):
     fig = go.Figure()
@@ -309,6 +312,7 @@ def make_base_trend_plot(session_id):
         fig.add_trace(t)
     fig.update_layout(showlegend=False)
     fig.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
+
     return fig
 
 def make_new_trends(indexes):
@@ -370,8 +374,6 @@ y_max = ss_df.iloc[:,5:].max().max()
 num_weeks = len(ss_df.columns[5:])
 pretty_weeks = ['Week ' + str(i+1) for i in range(num_weeks)]
 
-hists = make_ws_hists(num_weeks, ws_df)
-
 marks={i:pretty_weeks[i] for i in range(num_weeks)}
 
 def layout():
@@ -391,8 +393,12 @@ def layout():
             ],no_gutters=True),
         ],width=8,style={'float': 'left','height':'100vh','padding':'0'}),
         dbc.Col([
-            dcc.Graph(id='weekend_hist',
-                      style={'height':'30vh','margin-top':'5px'}),
+            dbc.Row([dcc.Graph(id='weekend_hist_x',
+                  style={'height':'7vh','width':'80%','margin':'0'})]),
+            dbc.Row([dcc.Graph(id='weekend_scatter',
+                      style={'height':'30vh','width':'80%','margin':'0'}),
+                      dcc.Graph(id='weekend_hist_y',
+                                style={'height':'30vh','width':'20%','margin':'0'})]),
             dcc.Graph(id='weekend_score',
                       style={'height':'30vh','margin-top':'5px'}),
             dcc.Graph(id='slip_score',
