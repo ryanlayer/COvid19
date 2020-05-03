@@ -148,7 +148,7 @@ def update_scatter_plots(selected_col_i,ss_data,ws_data,trend_data,session_id,ma
         indexes = [x['pointNumber'] for x in map_selection['points']]
         lon = ss_df.iloc[indexes[0],:]['lon']
         lat = ss_df.iloc[indexes[0],:]['lat']
-
+    print(indexes)
     return slip_score_callback(selected_col_i,ss_data,indexes),  \
            weekend_score_callback(selected_col_i,ws_data,indexes), \
            make_trend(indexes,session_id), get_map(lons, lats, lon, lat, indexes)
@@ -276,8 +276,8 @@ def make_trend(indexes,session_id):
                                  opacity=0.5,
                                  line=dict(width=b_norm[idx],
                                            color=line_color)))
-        if idx == 100:
-            break
+        # if idx == 100:
+        #     break
     trace_indexes = list(range(len(traces)))
     for index in indexes:
         traces = move_index_to_end(traces,index)
@@ -312,16 +312,12 @@ def layout():
         dbc.Col([
             dbc.Row( [
                 dbc.Col( dcc.Graph(id='map',
-                                   figure=get_map([40.588928],[-112.071533],40.588928, -112.071533,[0])))
-            ]),
+                                   figure=get_map([40.588928],[-112.071533],40.588928, -112.071533,[0]),
+                                   style={'height':'47vh'})),
+            ],no_gutters=True),
             dbc.Row([
-                dbc.Col(dcc.Graph(id='trend_lines'))
-            ]),
-            dbc.Row([
-                dbc.Col(dcc.Graph(id='weekend_hist'), width=4),
-                dbc.Col(dcc.Graph(id='weekend_score'), width=4),
-                dbc.Col(dcc.Graph(id='slip_score'), width=4)
-            ],no_gutters=True,),
+                dbc.Col(dcc.Graph(id='trend_lines',style={'height':'47vh'}))
+            ],no_gutters=True),
             dbc.Row( [
                 dbc.Col(dcc.Slider(id='week-slider',
                                    min=0,
@@ -329,8 +325,13 @@ def layout():
                                    value=num_weeks-1,
                                    marks=marks,
                                    step=None)),
-            ]),
-        ]),
+            ],no_gutters=True,style={'height':'5vh'}),
+        ],width=8,style={'float': 'left','height':'100vh','padding':'0'}),
+        dbc.Col([
+            dcc.Graph(id='weekend_hist',style={'height':'30vh','margin-top':'5px'}),
+            dcc.Graph(id='weekend_score',style={'height':'30vh','margin-top':'5px'}),
+            dcc.Graph(id='slip_score',style={'height':'30vh','margin-top':'5px'}),
+        ],width=4,style={'float': 'left','height':'100vh'}),
         # Hidden div inside the app that stores the intermediate value
         html.Div(session_id,id='session-id', style={'display': 'none'})
     ])
