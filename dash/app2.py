@@ -52,14 +52,15 @@ trend_session_cache = MaxSizeCache(100)
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
 
-def get_map(lat, lon):
+def get_map(lats, lons, lat, lon, index):
     mapbox_access_token = open(".mapbox_token").read()
-
+    colors = [default_point_color] * len(lats)
+    colors[index] = 'red'
     fig = go.Figure(go.Scattermapbox(\
-            lat=[lat],
-            lon=[lon],
+            lat=lats,
+            lon=lons,
             mode='markers',
-            marker=go.scattermapbox.Marker( size=14,color='red') ))
+            marker=go.scattermapbox.Marker( size=14,color=colors) ))
 
     fig.update_layout(
         hovermode='closest',
@@ -115,30 +116,36 @@ def move_all_index_to_end(X,Y,df_indexes,index):
     Input('slip_score', 'clickData'),
     Input('weekend_score', 'clickData'),
     Input('trend_lines','clickData'),
-    Input('session-id','children')])
-def update_scatter_plots(selected_col_i,ss_data,ws_data,trend_data,session_id):
+    Input('session-id','children'),
+    Input('map','clickData')])
+def update_scatter_plots(selected_col_i,ss_data,ws_data,trend_data,session_id,map_data):
     lon = 40.588928
     lat = -112.071533
-
+    lons = list(ws_df['lon'])
+    lats = list(ws_df['lat'])
     ctx = dash.callback_context
     index = -1
     if ctx.triggered[0]['prop_id'] == 'weekend_score.clickData':
         index = int(ws_data['points'][0]['customdata'])
-        lon = ws_df.iloc[int(ws_data['points'][0]['customdata']),:]['lon']
-        lat = ws_df.iloc[int(ws_data['points'][0]['customdata']),:]['lat']
+        lon = ws_df.iloc[index,:]['lon']
+        lat = ws_df.iloc[index,:]['lat']
     elif ctx.triggered[0]['prop_id'] == 'slip_score.clickData':
         index = int(ss_data['points'][0]['customdata'])
-        lon = ss_df.iloc[int(ss_data['points'][0]['customdata']),:]['lon']
-        lat = ss_df.iloc[int(ss_data['points'][0]['customdata']),:]['lat']
+        lon = ss_df.iloc[index,:]['lon']
+        lat = ss_df.iloc[index,:]['lat']
     elif ctx.triggered[0]['prop_id'] == 'trend_lines.clickData':
         trend_index = trend_data['points'][0]['curveNumber']
         index = trend_session_cache.get(session_id)[trend_index]
         lon = trend_df.iloc[index,:]['lon']
         lat = trend_df.iloc[index,:]['lat']
+    elif ctx.triggered[0]['prop_id'] == 'map.clickData':
+        index = map_data['points'][0]['pointNumber']
+        lon = ss_df.iloc[index,:]['lon']
+        lat = ss_df.iloc[index,:]['lat']
 
     return slip_score_callback(selected_col_i,ss_data,index),  \
            weekend_score_callback(selected_col_i,ws_data,index), \
-           make_trend(index,session_id), get_map(lon,lat)
+           make_trend(index,session_id), get_map(lons, lats, lon, lat, index)
 
 
 def slip_score_callback(selected_col_i,ss_data,point_index):
@@ -287,7 +294,7 @@ def layout():
         dbc.Col([
             dbc.Row( [
                 dbc.Col( dcc.Graph(id='map',
-                                   figure=get_map(40.588928, -112.071533)))
+                                   figure=get_map([40.588928],[-112.071533],40.588928, -112.071533,0)))
             ]),
             dbc.Row([
                 dbc.Col(dcc.Graph(id='trend_lines'))
