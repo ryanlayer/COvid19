@@ -52,10 +52,11 @@ trend_session_cache = MaxSizeCache(100)
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
 
-def get_map(lats, lons, lat, lon, index):
+def get_map(lats, lons, lat, lon, indexes):
     mapbox_access_token = open(".mapbox_token").read()
     colors = [default_point_color] * len(lats)
-    colors[index] = 'red'
+    for index in indexes:
+        colors[index] = 'red'
     fig = go.Figure(go.Scattermapbox(\
             lat=lats,
             lon=lons,
@@ -117,38 +118,43 @@ def move_all_index_to_end(X,Y,df_indexes,index):
     Input('weekend_score', 'clickData'),
     Input('trend_lines','clickData'),
     Input('session-id','children'),
-    Input('map','clickData')])
-def update_scatter_plots(selected_col_i,ss_data,ws_data,trend_data,session_id,map_data):
+    Input('map','clickData'),
+    Input('map','selectedData')])
+def update_scatter_plots(selected_col_i,ss_data,ws_data,trend_data,session_id,map_data,map_selection):
     lon = 40.588928
     lat = -112.071533
     lons = list(ws_df['lon'])
     lats = list(ws_df['lat'])
     ctx = dash.callback_context
-    index = -1
+    indexes = [-1]
     if ctx.triggered[0]['prop_id'] == 'weekend_score.clickData':
-        index = int(ws_data['points'][0]['customdata'])
-        lon = ws_df.iloc[index,:]['lon']
-        lat = ws_df.iloc[index,:]['lat']
+        indexes = [int(ws_data['points'][0]['customdata'])]
+        lon = ws_df.iloc[indexes[0],:]['lon']
+        lat = ws_df.iloc[indexes[0],:]['lat']
     elif ctx.triggered[0]['prop_id'] == 'slip_score.clickData':
-        index = int(ss_data['points'][0]['customdata'])
-        lon = ss_df.iloc[index,:]['lon']
-        lat = ss_df.iloc[index,:]['lat']
+        indexes = [int(ss_data['points'][0]['customdata'])]
+        lon = ss_df.iloc[indexes[0],:]['lon']
+        lat = ss_df.iloc[indexes[0],:]['lat']
     elif ctx.triggered[0]['prop_id'] == 'trend_lines.clickData':
         trend_index = trend_data['points'][0]['curveNumber']
-        index = trend_session_cache.get(session_id)[trend_index]
-        lon = trend_df.iloc[index,:]['lon']
-        lat = trend_df.iloc[index,:]['lat']
+        indexes = [trend_session_cache.get(session_id)[trend_index]]
+        lon = trend_df.iloc[indexes[0],:]['lon']
+        lat = trend_df.iloc[indexes[0],:]['lat']
     elif ctx.triggered[0]['prop_id'] == 'map.clickData':
-        index = map_data['points'][0]['pointNumber']
-        lon = ss_df.iloc[index,:]['lon']
-        lat = ss_df.iloc[index,:]['lat']
+        indexes = [map_data['points'][0]['pointNumber']]
+        lon = ss_df.iloc[indexes[0],:]['lon']
+        lat = ss_df.iloc[indexes[0],:]['lat']
+    elif ctx.triggered[0]['prop_id'] == 'map.selectedData':
+        indexes = [x['pointNumber'] for x in map_selection['points']]
+        lon = ss_df.iloc[indexes[0],:]['lon']
+        lat = ss_df.iloc[indexes[0],:]['lat']
 
-    return slip_score_callback(selected_col_i,ss_data,index),  \
-           weekend_score_callback(selected_col_i,ws_data,index), \
-           make_trend(index,session_id), get_map(lons, lats, lon, lat, index)
+    return slip_score_callback(selected_col_i,ss_data,indexes),  \
+           weekend_score_callback(selected_col_i,ws_data,indexes), \
+           make_trend(indexes,session_id), get_map(lons, lats, lon, lat, indexes)
 
 
-def slip_score_callback(selected_col_i,ss_data,point_index):
+def slip_score_callback(selected_col_i,ss_data,point_indexes):
     slip_weeks = ss_df.columns[5:]
     selected_col = slip_weeks[selected_col_i]
     df_indexes = list(range(ss_df.shape[0]))
@@ -158,14 +164,16 @@ def slip_score_callback(selected_col_i,ss_data,point_index):
     X = list(filtered_df['baseline_density'])
     Y = list(filtered_df[selected_col])
     df_indexes = list(range(len(X)))
+    marker_colors = [default_point_color] * len(X)
 
-    if point_index != -1:
+    if point_indexes[0] != -1:
         point_color = 'red'
         # move the point of interest to the end so it displays on top
-        X,Y,df_indexes = move_all_index_to_end(X,Y,df_indexes,point_index)
+        for index in point_indexes:
+            X,Y,df_indexes = move_all_index_to_end(X,Y,df_indexes,index)
+            marker_colors = move_index_to_end(marker_colors,index)
+            marker_colors[-1] = 'red'
 
-    marker_colors = [default_point_color] * len(X)
-    marker_colors[-1] = point_color
     traces = []
     traces.append(dict(
         x=X,
@@ -190,7 +198,7 @@ def slip_score_callback(selected_col_i,ss_data,point_index):
     }
 
 
-def weekend_score_callback(selected_col_i,ws_data,point_index):
+def weekend_score_callback(selected_col_i,ws_data,point_indexes):
     ws_weeks = ws_df.columns[6:]
     selected_col = ws_weeks[selected_col_i]
     point_color = default_point_color
@@ -198,14 +206,17 @@ def weekend_score_callback(selected_col_i,ws_data,point_index):
     Y = list(ws_df[selected_col])
     df_indexes = list(range(len(X)))
 
-    if point_index != -1:
+    marker_colors = [default_point_color] * len(X)
+
+    if point_indexes[0] != -1:
         point_color = 'red'
         # move the point of interest to the end so it displays on top
-        X,Y,df_indexes = move_all_index_to_end(X,Y,df_indexes,point_index)
+        for index in point_indexes:
+            X,Y,df_indexes = move_all_index_to_end(X,Y,df_indexes,index)
+            marker_colors = move_index_to_end(marker_colors,index)
+            marker_colors[-1] = 'red'
 
     traces = []
-    marker_colors = [default_point_color] * len(ws_df[selected_col])
-    marker_colors[-1] = point_color
     traces.append(dict(
         x=X,
         y=Y,
@@ -238,7 +249,7 @@ def make_ws_hist(selected_col_i):
     return { 'data' : [{ 'x' :ws_df[selected_col], 'type': 'histogram' } ]}
 
 
-def make_trend(index,session_id):
+def make_trend(indexes,session_id):
     dow_date_time= [ x.split()[1:] for x in trend_df.columns[6:]]
     date_time = [x[1:] for x in dow_date_time]
 
@@ -247,10 +258,9 @@ def make_trend(index,session_id):
 
     fig = go.Figure()
     traces = []
-    indexes = list(range(trend_df.shape[0]))
     for idx,row in trend_df.iterrows():
         line_color = default_point_color
-        if idx == index:
+        if idx in indexes:
             line_color = 'red'
         y = row.tolist()[6:]
         x = [i for i in range(len(y))]
@@ -263,9 +273,11 @@ def make_trend(index,session_id):
                                            color=line_color)))
         if idx == 100:
             break
-    traces = move_index_to_end(traces,index)
     trace_indexes = list(range(len(traces)))
-    trace_indexes = move_index_to_end(trace_indexes,index)
+    for index in indexes:
+        traces = move_index_to_end(traces,index)
+        trace_indexes = move_index_to_end(trace_indexes,index)
+
     trend_session_cache.add_to_cache(session_id,trace_indexes)
     for t in traces:
         fig.add_trace(t)
@@ -294,7 +306,7 @@ def layout():
         dbc.Col([
             dbc.Row( [
                 dbc.Col( dcc.Graph(id='map',
-                                   figure=get_map([40.588928],[-112.071533],40.588928, -112.071533,0)))
+                                   figure=get_map([40.588928],[-112.071533],40.588928, -112.071533,[0])))
             ]),
             dbc.Row([
                 dbc.Col(dcc.Graph(id='trend_lines'))
