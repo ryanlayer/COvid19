@@ -55,13 +55,17 @@ app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 def get_map(lats, lons, lat, lon, indexes):
     mapbox_access_token = open(".mapbox_token").read()
     colors = [default_point_color] * len(lats)
+    opacity = [0.25] * len(lats)
     for index in indexes:
         colors[index] = 'red'
+        opacity[index] = 1.0
     fig = go.Figure(go.Scattermapbox(\
             lat=lats,
             lon=lons,
             mode='markers',
-            marker=go.scattermapbox.Marker( size=14,color=colors) ))
+            marker=go.scattermapbox.Marker(size=14,
+                                           opacity=opacity,
+                                           color=colors) ))
 
     fig.update_layout(
         hovermode='closest',
@@ -187,14 +191,20 @@ def slip_score_callback(selected_col_i,ss_data,point_indexes):
             'color': marker_colors
         },
     ))
+
+    week_1 = 'Week ' + str(selected_col_i) if selected_col_i > 0 else 'Baseline'
+    week_2 = 'week ' +str(selected_col_i+1)
+    y_label = week_1 + ' to ' + week_2 + ' slip'
+
     return {
         'data': traces,
         'layout': dict(
             xaxis={'title':'Baseline density'},
-            yaxis={'title':'Slip score'},
+            yaxis={'title':y_label},
             hovermode='closest',
             transition = {'duration': 500},
-            margin={'t':0,'b':0,'r':0,'l':0}
+            margin={'t':10,'l':50,'r':0}
+           # margin={'t':0,'b':0,'r':0,'l':0}
         )
     }
 
@@ -230,14 +240,21 @@ def weekend_score_callback(selected_col_i,ws_data,point_indexes):
             'color':marker_colors
         },
     ))
+
+    y_label = 'Week ' + str(selected_col_i+1) + ' weekend score'
+    x_label = 'Week ' + str(selected_col_i) + ' weekend score'
+    if selected_col_i == 0:
+        x_label = 'Baseline weekend score'
+
     return {
         'data': traces,
         'layout': dict(
-            xaxis={'title':'Baseline ws'},
-            yaxis={'title':'Week ' + str(selected_col_i+1) + ' score'},
+            xaxis={'title': x_label},
+            yaxis={'title': y_label},
             hovermode='closest',
             transition = {'duration': 500},
-            margin={'t':0,'b':0,'r':0,'l':0}
+            margin={'t':10,'l':50,'r':0}
+            #margin={'t':0,'b':0,'r':0,'l':0}
         )
     }
 
@@ -248,15 +265,26 @@ def weekend_score_callback(selected_col_i,ws_data,point_indexes):
 def make_ws_hist(selected_col_i):
     ws_weeks = ws_df.columns[6:]
     selected_col = ws_weeks[selected_col_i]
+    x_label = 'Week ' + str(selected_col_i+1) + ' weekend score'
     return {
-    'data' : [{ 'x' :ws_df[selected_col], 'type': 'histogram' } ],
-    'layout': {'margin':{'t':0,'b':0,'r':0,'l':0}}
+        'data' : [
+            { 
+                'x'   : ws_df[selected_col], 
+                'type': 'histogram' 
+            } 
+        ],
+        'layout': {
+            'margin':{'t':10,'b':50,'r':0,'l':50},
+            'xaxis' : {'title': x_label},
+            'yaxis' : {'title': 'Frequency'}
+        }
     }
 
 
 def make_trend(indexes,session_id):
     dow_date_time= [ x.split()[1:] for x in trend_df.columns[6:]]
-    date_time = [x[1:] for x in dow_date_time]
+    #date_time = [x[1] for x in dow_date_time]
+    date_time = [x[1] + x[2][:2] + ':' + x[2][2:] for x in dow_date_time]
 
     b = np.array(trend_df.baseline_density.tolist())
     b_norm = 1 + (5*((b - np.min(b)) / np.max(b)))
@@ -268,7 +296,8 @@ def make_trend(indexes,session_id):
         if idx in indexes:
             line_color = 'red'
         y = row.tolist()[6:]
-        x = [i for i in range(len(y))]
+        #x = [i for i in range(len(y))]
+        x = date_time
         loc = str(row.lat) + ',' + str(row.lon)
         traces.append(go.Scatter(x=x,
                                  y=y,
@@ -276,8 +305,8 @@ def make_trend(indexes,session_id):
                                  opacity=0.5,
                                  line=dict(width=b_norm[idx],
                                            color=line_color)))
-        # if idx == 100:
-        #     break
+        if idx == 100:
+            break
     trace_indexes = list(range(len(traces)))
     for index in indexes:
         traces = move_index_to_end(traces,index)
@@ -312,25 +341,29 @@ def layout():
         dbc.Col([
             dbc.Row( [
                 dbc.Col( dcc.Graph(id='map',
-                                   figure=get_map([40.588928],[-112.071533],40.588928, -112.071533,[0]),
+                                   figure=get_map([40.588928],
+                                                  [-112.071533],
+                                                  40.588928,
+                                                  -112.071533,[0]),
                                    style={'height':'47vh'})),
             ],no_gutters=True),
             dbc.Row([
                 dbc.Col(dcc.Graph(id='trend_lines',style={'height':'47vh'}))
             ],no_gutters=True),
-            dbc.Row( [
-                dbc.Col(dcc.Slider(id='week-slider',
-                                   min=0,
-                                   max=num_weeks-1,
-                                   value=num_weeks-1,
-                                   marks=marks,
-                                   step=None)),
-            ],no_gutters=True,style={'height':'5vh'}),
         ],width=8,style={'float': 'left','height':'100vh','padding':'0'}),
         dbc.Col([
-            dcc.Graph(id='weekend_hist',style={'height':'30vh','margin-top':'5px'}),
-            dcc.Graph(id='weekend_score',style={'height':'30vh','margin-top':'5px'}),
-            dcc.Graph(id='slip_score',style={'height':'30vh','margin-top':'5px'}),
+            dcc.Graph(id='weekend_hist',
+                      style={'height':'30vh','margin-top':'5px'}),
+            dcc.Graph(id='weekend_score',
+                      style={'height':'30vh','margin-top':'5px'}),
+            dcc.Graph(id='slip_score',
+                      style={'height':'30vh','margin-top':'5px'}),
+            dcc.Slider(id='week-slider',
+                       min=0,
+                       max=num_weeks-1,
+                       value=num_weeks-1,
+                       marks=marks,
+                       step=None)
         ],width=4,style={'float': 'left','height':'100vh'}),
         # Hidden div inside the app that stores the intermediate value
         html.Div(session_id,id='session-id', style={'display': 'none'})
