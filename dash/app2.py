@@ -76,7 +76,7 @@ def get_map(lats, lons, lat, lon, indexes):
             zoom=10,
         )
     )
-
+    fig.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
     return fig
 
 
@@ -194,6 +194,7 @@ def slip_score_callback(selected_col_i,ss_data,point_indexes):
             yaxis={'title':'Slip score'},
             hovermode='closest',
             transition = {'duration': 500},
+            margin={'t':0,'b':0,'r':0,'l':0}
         )
     }
 
@@ -236,6 +237,7 @@ def weekend_score_callback(selected_col_i,ws_data,point_indexes):
             yaxis={'title':'Week ' + str(selected_col_i+1) + ' score'},
             hovermode='closest',
             transition = {'duration': 500},
+            margin={'t':0,'b':0,'r':0,'l':0}
         )
     }
 
@@ -246,7 +248,10 @@ def weekend_score_callback(selected_col_i,ws_data,point_indexes):
 def make_ws_hist(selected_col_i):
     ws_weeks = ws_df.columns[6:]
     selected_col = ws_weeks[selected_col_i]
-    return { 'data' : [{ 'x' :ws_df[selected_col], 'type': 'histogram' } ]}
+    return {
+    'data' : [{ 'x' :ws_df[selected_col], 'type': 'histogram' } ],
+    'layout': {'margin':{'t':0,'b':0,'r':0,'l':0}}
+    }
 
 
 def make_trend(indexes,session_id):
@@ -282,6 +287,7 @@ def make_trend(indexes,session_id):
     for t in traces:
         fig.add_trace(t)
     fig.update_layout(showlegend=False)
+    fig.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
     return fig
 
 
