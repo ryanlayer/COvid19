@@ -200,19 +200,8 @@ def slip_score_callback(selected_week,ss_data,point_indexes):
         # margin={'t':10,'l':50,'r':0}
         margin={'t':0,'b':0,'r':0,'l':0}
     ))
-    # fig.update_xaxes(range=[-50, 1250])
     return fig
-    # return {
-    #     'data': traces,
-    #     'layout': dict(
-    #         xaxis={'title':'Baseline density'},
-    #         yaxis={'title':y_label},
-    #         hovermode='closest',
-    #         transition = {'duration': 500},
-    #         margin={'t':10,'l':50,'r':0}
-    #        # margin={'t':0,'b':0,'r':0,'l':0}
-    #     )
-    # }
+
 
 
 def weekend_score_callback(selected_week,ws_data,point_indexes):
@@ -266,20 +255,6 @@ def weekend_score_callback(selected_week,ws_data,point_indexes):
     return fig
 
 
-
-# @app.callback(
-#     Output('weekend_scatter', 'figure'),
-#     [Input('week-slider', 'value')])
-# def make_ws_hist(selected_week):
-#     ws_weeks = ws_df.columns[6:]
-#     y = ws_df[ws_weeks[selected_week]]
-#     x = ws_df[ws_weeks[selected_week-1]]
-#     fig = px.scatter(x=x,y=y)
-#     fig.update_layout(margin={"r":0,"t":0,"l":0,"b":0},
-#     xaxis_title="Week " + str(selected_week),
-#     yaxis_title="Week " + str(selected_week+1))
-#     return fig
-
 @app.callback(
     Output('weekend_hist_y', 'figure'),
     [Input('week-slider', 'value')])
@@ -291,7 +266,7 @@ def make_ws_hist_y(selected_week):
     # fig.update_yaxes(tickfont=dict(color='white'))
     # fig.update_xaxes(tickfont=dict(color='white'))
     fig.update_layout(margin={"r":0,"t":0,"l":0,"b":0},xaxis_title=" ")
-    fig.update_yaxes(range=[-0.75, 1.75])
+    # fig.update_yaxes(range=[-0.75, 1.75])
     return fig
 
 @app.callback(
@@ -305,7 +280,7 @@ def make_ws_hist_x(selected_week):
     # fig.update_xaxes(tickfont=dict(color='white'))
     fig.update_xaxes(showticklabels=False)
     fig.update_layout(margin={"r":0,"t":0,"l":0,"b":0},yaxis_title=" ",xaxis_title=" ")
-    fig.update_xaxes(range=[-0.75, 1.75])
+    # fig.update_xaxes(range=[-0.75, 1.75])
     return fig
 
 
@@ -422,7 +397,7 @@ def make_new_trends(indexes):
         if idx in indexes:
             line_color = 'red'
             opactiy = 1.0
-        elif len(indexes) == 0:
+        else:
             continue
         y = row.tolist()[6:]
         x = date_time
@@ -451,10 +426,8 @@ def make_trend(selected_week, indexes, session_id, trend_figure):
         trend_session_cache.add_to_cache(session_id,trace_indexes)
 
         update_trend_week(trend_figure, selected_week)
-
         return trend_figure
     else:
-        # cache the blank trend plot in the global variable
         trendlines_fig = make_base_trend_plot(session_id)
         update_trend_week(trendlines_fig, selected_week)
         return trendlines_fig
@@ -503,7 +476,7 @@ def layout():
             dbc.Row([dcc.Graph(id='weekend_hist_x',
                   style={'height':'10vh','width':'80%','margin':'0'})]),
             dbc.Row([dcc.Graph(id='weekend_score',
-                      style={'height':'34vh','width':'80%','margin':'0'}),
+                      style={'height':'33vh','width':'80%','margin':'0'}),
                       dcc.Graph(id='weekend_hist_y',
                                 style={'height':'30vh',
                                        'width':'20%',
@@ -511,7 +484,7 @@ def layout():
             dbc.Row([dcc.Graph(id='ss_hist_x',
                   style={'height':'10vh','width':'80%','margin':'0'})]),
             dbc.Row([dcc.Graph(id='slip_score',
-                      style={'height':'34vh','width':'80%','margin':'0'}),
+                      style={'height':'33vh','width':'80%','margin':'0'}),
                       dcc.Graph(id='ss_hist_y',
                                 style={'height':'35vh',
                                        'width':'20%',
