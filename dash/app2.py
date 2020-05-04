@@ -190,16 +190,43 @@ def slip_score_callback(selected_week,ss_data,point_indexes):
     week_1 = 'Week ' + str(selected_week) if selected_week > 0 else 'Baseline'
     week_2 = 'week ' +str(selected_week+1)
     y_label = week_1 + ' to ' + week_2 + ' slip'
-    fig = go.Figure()
-    fig.add_trace(traces[0])
+
+    #fig = go.Figure()
+
+    fig = make_subplots(rows=2, cols=2,
+                        row_heights=[0.15, 0.85],
+                        column_widths=[0.85, 0.15],
+                        horizontal_spacing = 0.0,
+                        vertical_spacing = 0.0)
+
+    fig.add_trace(go.Histogram(x=Y), row=1, col=1)
+    fig.update_xaxes(showticklabels=False,
+                     row=1, col=1)
+    fig.update_yaxes( title_text='Freq',
+                     row=1, col=1)
+    fig.add_trace(go.Histogram(y=X), row=2, col=2)
+    fig.update_yaxes(showticklabels=False,
+                     row=2, col=2)
+    fig.update_xaxes(title_text='Freq',
+                     row=2, col=2)
+    #fig.update_xaxes(range=[-2,2], row=1, col=1)
+
+    fig.add_trace(traces[0], row=2, col=1)
+    #fig.update_xaxes(range=[-2,2], row=2, col=1)
+
     fig.update_layout(dict(
-        xaxis={'title':'Baseline density'},
-        yaxis={'title':y_label},
+        #xaxis={'title':'Baseline density'},
+        #yaxis={'title':y_label},
         hovermode='closest',
         transition = {'duration': 500},
         # margin={'t':10,'l':50,'r':0}
         margin={'t':0,'b':0,'r':0,'l':0}
     ))
+
+    fig.update_layout(showlegend=False)
+    fig.update_xaxes(title_text='Baseline density', row=2, col=1)
+    fig.update_yaxes(title_text=y_label, row=2, col=1)
+
     return fig
 
 
@@ -240,79 +267,102 @@ def weekend_score_callback(selected_week,ws_data,point_indexes):
     x_label = 'Week ' + str(selected_week) + ' weekend score'
     if selected_week == 0:
         x_label = 'Baseline weekend score'
-    fig = go.Figure()
-    fig.add_trace(traces[0])
+    #fig = go.Figure()
+
+    fig = make_subplots(rows=2, cols=2,
+                        row_heights=[0.15, 0.85],
+                        column_widths=[0.85, 0.15],
+                        horizontal_spacing = 0.0,
+                        vertical_spacing = 0.0)
+
+
+    fig.add_trace(go.Histogram(x=Y), row=1, col=1)
+    fig.update_xaxes(showticklabels=False,
+                     row=1, col=1)
+    fig.update_yaxes( title_text='Freq',
+                     row=1, col=1)
+    fig.add_trace(go.Histogram(y=X), row=2, col=2)
+    fig.update_yaxes(showticklabels=False,
+                     row=2, col=2)
+    fig.update_xaxes(title_text='Freq',
+                     row=2, col=2)
+    #fig.update_xaxes(range=[-2,2], row=1, col=1)
+
+    fig.add_trace(traces[0], row=2, col=1)
+    #fig.update_xaxes(range=[-2,2], row=2, col=1)
+
     fig.update_layout(dict(
-        xaxis={'title':'Baseline density'},
-        yaxis={'title':y_label},
+        #xaxis={'title':'Baseline density'},
+        #yaxis={'title':y_label},
         hovermode='closest',
         transition = {'duration': 500},
         # margin={'t':10,'l':50,'r':0}
         margin={'t':0,'b':0,'r':0,'l':0}
     ))
+    fig.update_layout(showlegend=False)
+    fig.update_xaxes(title_text=x_label, row=2, col=1)
+    fig.update_yaxes(title_text=y_label, row=2, col=1)
     # fig.update_xaxes(range=[-0.75, 1.75])
     # fig.update_yaxes(range=[-0.75, 1.75])
     return fig
 
 
-@app.callback(
-    Output('weekend_hist_y', 'figure'),
-    [Input('week-slider', 'value')])
-def make_ws_hist_y(selected_week):
-    ws_weeks = ws_df.columns[6:]
-    y = ws_df[ws_weeks[selected_week]]
-    fig = go.Figure(data=[go.Histogram(y=y)])
-    # fig.update_yaxes(showticklabels=False)
-    # fig.update_yaxes(tickfont=dict(color='white'))
-    # fig.update_xaxes(tickfont=dict(color='white'))
-    fig.update_layout(margin={"r":0,"t":0,"l":0,"b":0},xaxis_title=" ")
-    # fig.update_yaxes(range=[-0.75, 1.75])
-    return fig
+#@app.callback(
+#    Output('weekend_hist_y', 'figure'),
+#    [Input('week-slider', 'value')])
+#def make_ws_hist_y(selected_week):
+#    ws_weeks = ws_df.columns[6:]
+#    y = ws_df[ws_weeks[selected_week]]
+#    fig = go.Figure(data=[go.Histogram(y=y)])
+#    fig.update_yaxes(showticklabels=False)
+#    # fig.update_yaxes(tickfont=dict(color='white'))
+#    # fig.update_xaxes(tickfont=dict(color='white'))
+#    fig.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
+#    # fig.update_yaxes(range=[-0.75, 1.75])
+#    return fig
 
-@app.callback(
-    Output('weekend_hist_x', 'figure'),
-    [Input('week-slider', 'value')])
-def make_ws_hist_x(selected_week):
-    ws_weeks = ws_df.columns[6:]
-    x = ws_df[ws_weeks[selected_week-1]]
-    fig = go.Figure(data=[go.Histogram(x=x)])
-    # fig.update_yaxes(tickfont=dict(color='white'))
-    # fig.update_xaxes(tickfont=dict(color='white'))
-    fig.update_xaxes(showticklabels=False)
-    fig.update_layout(margin={"r":0,"t":0,"l":0,"b":0},yaxis_title=" ",xaxis_title=" ")
-    # fig.update_xaxes(range=[-0.75, 1.75])
-    return fig
-
-
-
-@app.callback(
-    Output('ss_hist_y', 'figure'),
-    [Input('week-slider', 'value')])
-def make_ss_hist_y(selected_week):
-    ss_weeks = ss_df.columns[5:]
-    y = ss_df[ss_weeks[selected_week]]
-    fig = go.Figure(data=[go.Histogram(y=y)])
-    # fig.update_yaxes(showticklabels=False)
-    # fig.update_yaxes(tickfont=dict(color='white'))
-    # fig.update_xaxes(tickfont=dict(color='white'))
-    fig.update_layout(margin={"r":0,"t":0,"l":0,"b":0},xaxis_title=" ")
-    # fig.update_yaxes(range=[-0.75, 1.75])
-    return fig
-
-@app.callback(
-    Output('ss_hist_x', 'figure'),
-    [Input('week-slider', 'value')])
-def make_ss_hist_x(selected_week):
-    ss_weeks = ss_df.columns[5:]
-    # x = ss_df[ss_weeks[0]]
-    x = list(ss_df['baseline_density'])
-    fig = go.Figure(data=[go.Histogram(x=x)])
-    # fig.update_yaxes(tickfont=dict(color='white'))
-    # fig.update_xaxes(tickfont=dict(color='white'))
-    # fig.update_xaxes(showticklabels=False)
-    fig.update_layout(margin={"r":0,"t":0,"l":0,"b":0},yaxis_title=" ",xaxis_title=" ")
-    fig.update_xaxes(range=[-100, 1250])
-    return fig
+#@app.callback(
+#    Output('weekend_hist_x', 'figure'),
+#    [Input('week-slider', 'value')])
+#def make_ws_hist_x(selected_week):
+#    ws_weeks = ws_df.columns[6:]
+#    x = ws_df[ws_weeks[selected_week-1]]
+#    fig = go.Figure(data=[go.Histogram(x=x)])
+#    # fig.update_yaxes(tickfont=dict(color='white'))
+#    fig.update_xaxes(tickfont=dict(color='white'))
+#    fig.update_xaxes(showticklabels=False)
+#    fig.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
+#    # fig.update_xaxes(range=[-0.75, 1.75])
+#    return fig
+#
+#@app.callback(
+#    Output('ss_hist_y', 'figure'),
+#    [Input('week-slider', 'value')])
+#def make_ss_hist_y(selected_week):
+#    ss_weeks = ss_df.columns[5:]
+#    y = ss_df[ss_weeks[selected_week]]
+#    fig = go.Figure(data=[go.Histogram(y=y)])
+#    fig.update_yaxes(showticklabels=False)
+#    # fig.update_yaxes(tickfont=dict(color='white'))
+#    # fig.update_xaxes(tickfont=dict(color='white'))
+#    fig.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
+#    # fig.update_yaxes(range=[-0.75, 1.75])
+#    return fig
+#
+#@app.callback(
+#    Output('ss_hist_x', 'figure'),
+#    [Input('week-slider', 'value')])
+#def make_ss_hist_x(selected_week):
+#    ss_weeks = ss_df.columns[5:]
+#    # x = ss_df[ss_weeks[0]]
+#    x = list(ss_df['baseline_density'])
+#    fig = go.Figure(data=[go.Histogram(x=x)])
+#    # fig.update_yaxes(tickfont=dict(color='white'))
+#    # fig.update_xaxes(tickfont=dict(color='white'))
+#    fig.update_xaxes(showticklabels=False)
+#    fig.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
+#    fig.update_xaxes(range=[-100, 1250])
+#    return fig
 
 def get_date_time(header):
     date_time = []
@@ -473,28 +523,36 @@ def layout():
             ],no_gutters=True),
         ],width=8,style={'float': 'left','height':'100vh','padding':'0'}),
         dbc.Col([
-            dbc.Row([dcc.Graph(id='weekend_hist_x',
-                  style={'height':'10vh','width':'80%','margin':'0'})]),
+            #dbc.Row([dcc.Graph(id='weekend_hist_x',
+                  #style={'height':'10vh','width':'80%','margin':'0'})]),
             dbc.Row([dcc.Graph(id='weekend_score',
-                      style={'height':'33vh','width':'80%','margin':'0'}),
-                      dcc.Graph(id='weekend_hist_y',
-                                style={'height':'30vh',
-                                       'width':'20%',
-                                       'margin':'0'})]),
-            dbc.Row([dcc.Graph(id='ss_hist_x',
-                  style={'height':'10vh','width':'80%','margin':'0'})]),
+                      style={#'height':'33vh',
+                             'width':'100%',
+                            #'margin':'0'
+                      }),
+                      #dcc.Graph(id='weekend_hist_y',
+                                #style={'height':'30vh',
+                                       #'width':'20%',
+                                       #'margin':'0'})
+            ]),
+            #dbc.Row([dcc.Graph(id='ss_hist_x',
+                  #style={'height':'10vh','width':'80%','margin':'0'})]),
             dbc.Row([dcc.Graph(id='slip_score',
-                      style={'height':'33vh','width':'80%','margin':'0'}),
-                      dcc.Graph(id='ss_hist_y',
-                                style={'height':'35vh',
-                                       'width':'20%',
-                                       'margin':'0'})]),
+                      style={#'height':'33vh',
+                             'width':'100%',
+                             #'margin':'0'
+                      }),
+                      #dcc.Graph(id='ss_hist_y',
+                                #style={'height':'35vh',
+                                       #'width':'20%',
+                                       #'margin':'0'})
+            ]),
             dcc.Slider(id='week-slider',
                        min=0,
                        max=num_weeks-1,
                        value=num_weeks-1,
                        marks=marks,
-                       step=None)
+                   step=None)
         ],width=4,style={'float': 'left','height':'100vh'}),
         # Hidden div inside the app that stores the intermediate value
         html.Div(session_id,id='session-id', style={'display': 'none'})
