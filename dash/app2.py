@@ -11,6 +11,7 @@ import pandas as pd
 import uuid
 import time
 import copy
+import datetime
 
 class MaxSizeCache:
     def __init__(self, size):
@@ -111,7 +112,14 @@ def move_all_index_to_end(X,Y,df_indexes,index):
     Input('map','clickData'),
     Input('map','selectedData')],
     [State('trend_lines', 'figure')])
-def update_scatter_plots(selected_col_i,ss_data,ws_data,trend_data,session_id,map_data,map_selection,trend_figure):
+def update_scatter_plots(selected_week,
+                         ss_data,
+                         ws_data,
+                         trend_data,
+                         session_id,
+                         map_data,
+                         map_selection,
+                         trend_figure):
     lon = 40.588928
     lat = -112.071533
     lons = list(ws_df['lon'])
@@ -139,14 +147,15 @@ def update_scatter_plots(selected_col_i,ss_data,ws_data,trend_data,session_id,ma
         indexes = [x['pointNumber'] for x in map_selection['points']]
         lon = ss_df.iloc[indexes[0],:]['lon']
         lat = ss_df.iloc[indexes[0],:]['lat']
-    return slip_score_callback(selected_col_i,ss_data,indexes),  \
-           weekend_score_callback(selected_col_i,ws_data,indexes), \
-           make_trend(indexes,session_id,trend_figure), get_map(lons, lats, lon, lat, indexes)
+    return slip_score_callback(selected_week,ss_data,indexes),  \
+           weekend_score_callback(selected_week,ws_data,indexes), \
+           make_trend(selected_week,indexes,session_id,trend_figure), \
+           get_map(lons, lats, lon, lat, indexes)
 
 
-def slip_score_callback(selected_col_i,ss_data,point_indexes):
+def slip_score_callback(selected_week,ss_data,point_indexes):
     slip_weeks = ss_df.columns[5:]
-    selected_col = slip_weeks[selected_col_i]
+    selected_col = slip_weeks[selected_week]
     df_indexes = list(range(ss_df.shape[0]))
     point_color = default_point_color
     filtered_df = ss_df[['baseline_density',selected_col]]
@@ -178,8 +187,8 @@ def slip_score_callback(selected_col_i,ss_data,point_indexes):
         },
     ))
 
-    week_1 = 'Week ' + str(selected_col_i) if selected_col_i > 0 else 'Baseline'
-    week_2 = 'week ' +str(selected_col_i+1)
+    week_1 = 'Week ' + str(selected_week) if selected_week > 0 else 'Baseline'
+    week_2 = 'week ' +str(selected_week+1)
     y_label = week_1 + ' to ' + week_2 + ' slip'
 
     return {
@@ -195,9 +204,9 @@ def slip_score_callback(selected_col_i,ss_data,point_indexes):
     }
 
 
-def weekend_score_callback(selected_col_i,ws_data,point_indexes):
+def weekend_score_callback(selected_week,ws_data,point_indexes):
     ws_weeks = ws_df.columns[6:]
-    selected_col = ws_weeks[selected_col_i]
+    selected_col = ws_weeks[selected_week]
     point_color = default_point_color
     X = list(ws_df['baseline_ws'])
     Y = list(ws_df[selected_col])
@@ -227,9 +236,9 @@ def weekend_score_callback(selected_col_i,ws_data,point_indexes):
         },
     ))
 
-    y_label = 'Week ' + str(selected_col_i+1) + ' weekend score'
-    x_label = 'Week ' + str(selected_col_i) + ' weekend score'
-    if selected_col_i == 0:
+    y_label = 'Week ' + str(selected_week+1) + ' weekend score'
+    x_label = 'Week ' + str(selected_week) + ' weekend score'
+    if selected_week == 0:
         x_label = 'Baseline weekend score'
 
     return {
@@ -240,7 +249,6 @@ def weekend_score_callback(selected_col_i,ws_data,point_indexes):
             hovermode='closest',
             transition = {'duration': 500},
             margin={'t':10,'l':50,'r':0}
-            #margin={'t':0,'b':0,'r':0,'l':0}
         )
     }
 
@@ -248,22 +256,22 @@ def weekend_score_callback(selected_col_i,ws_data,point_indexes):
 @app.callback(
     Output('weekend_scatter', 'figure'),
     [Input('week-slider', 'value')])
-def make_ws_hist(selected_col_i):
+def make_ws_hist(selected_week):
     ws_weeks = ws_df.columns[6:]
-    y = ws_df[ws_weeks[selected_col_i]]
-    x = ws_df[ws_weeks[selected_col_i-1]]
+    y = ws_df[ws_weeks[selected_week]]
+    x = ws_df[ws_weeks[selected_week-1]]
     fig = px.scatter(x=x,y=y)
     fig.update_layout(margin={"r":0,"t":0,"l":0,"b":0},
-    xaxis_title="Week " + str(selected_col_i),
-    yaxis_title="Week " + str(selected_col_i+1))
+    xaxis_title="Week " + str(selected_week),
+    yaxis_title="Week " + str(selected_week+1))
     return fig
 
 @app.callback(
     Output('weekend_hist_y', 'figure'),
     [Input('week-slider', 'value')])
-def make_ws_hist(selected_col_i):
+def make_ws_hist(selected_week):
     ws_weeks = ws_df.columns[6:]
-    y = ws_df[ws_weeks[selected_col_i]]
+    y = ws_df[ws_weeks[selected_week]]
     fig = go.Figure(data=[go.Histogram(y=y)])
     fig.update_yaxes(showticklabels=False)
     fig.update_yaxes(tickfont=dict(color='white'))
@@ -274,9 +282,9 @@ def make_ws_hist(selected_col_i):
 @app.callback(
     Output('weekend_hist_x', 'figure'),
     [Input('week-slider', 'value')])
-def make_ws_hist(selected_col_i):
+def make_ws_hist(selected_week):
     ws_weeks = ws_df.columns[6:]
-    x = ws_df[ws_weeks[selected_col_i-1]]
+    x = ws_df[ws_weeks[selected_week-1]]
     fig = go.Figure(data=[go.Histogram(x=x)])
     fig.update_yaxes(tickfont=dict(color='white'))
     fig.update_xaxes(tickfont=dict(color='white'))
@@ -284,10 +292,46 @@ def make_ws_hist(selected_col_i):
     fig.update_layout(margin={"r":0,"t":0,"l":0,"b":0},yaxis_title=" ")
     return fig
 
+def get_date_time(header):
+    date_time = []
+    for dow_date_time in header:
+        state,dow,date,time = dow_date_time.split()
+        Y,M,D = date.split('-')
+        h = time[:2]
+        m = time[2:]
+        date_time.append(datetime.datetime(int(Y),
+                                           int(M),
+                                           int(D),
+                                           int(h),
+                                           int(m) ))
+    return date_time
+
+def update_trend_week(fig, week):
+    dow_date_time= [ x.split()[1:] for x in trend_df.columns[6:]]
+    date_time = get_date_time(trend_df.columns[6:])
+    if isinstance(fig, dict):
+        fig['layout']['shapes'][0]['x0'] = date_time[week*21]
+        fig['layout']['shapes'][0]['x1'] = date_time[min(week*21+21,
+                                                         len(date_time)-1)]
+    else:
+        fig.update_layout(shapes=[
+                dict(
+                    type='rect',
+                    xref='x', 
+                    x0=date_time[week*21],
+                    x1=date_time[min(week*21+21, len(date_time)-1)],
+                    yref='paper', y0=0, y1=1,
+                    fillcolor='grey',
+                    opacity=0.15,
+                    layer='below',
+                    line_width=0)
+        ])
+
+
 def make_base_trend_plot(session_id):
     fig = go.Figure()
     dow_date_time= [ x.split()[1:] for x in trend_df.columns[6:]]
-    date_time = [x[1] + x[2][:2] + ':' + x[2][2:] for x in dow_date_time]
+    date_time = get_date_time(trend_df.columns[6:])
 
     b = np.array(trend_df.baseline_density.tolist())
     b_norm = 1 + (5*((b - np.min(b)) / np.max(b)))
@@ -310,14 +354,16 @@ def make_base_trend_plot(session_id):
     trend_session_cache.add_to_cache(session_id,trace_indexes)
     for t in traces:
         fig.add_trace(t)
-    fig.update_layout(showlegend=False)
-    fig.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
+
+    fig.update_layout(showlegend=False,
+                      yaxis_title="Trend",
+                      margin={'t':10,'l':50,'r':0})
 
     return fig
 
 def make_new_trends(indexes):
     dow_date_time= [ x.split()[1:] for x in trend_df.columns[6:]]
-    date_time = [x[1] + x[2][:2] + ':' + x[2][2:] for x in dow_date_time]
+    date_time = get_date_time(trend_df.columns[6:])
 
     b = np.array(trend_df.baseline_density.tolist())
     b_norm = 1 + (5*((b - np.min(b)) / np.max(b)))
@@ -343,7 +389,7 @@ def make_new_trends(indexes):
                             type='scatter'))
     return traces
 
-def make_trend(indexes,session_id,trend_figure):
+def make_trend(selected_week, indexes, session_id, trend_figure):
     # check if the base figures already exists in memory
     if trend_figure is not None and len(trend_figure) != 0:
         # add more traces on top of the base plot
@@ -356,10 +402,15 @@ def make_trend(indexes,session_id,trend_figure):
         for t in traces:
             trend_figure['data'].append(t)
         trend_session_cache.add_to_cache(session_id,trace_indexes)
+
+        #print(type(trend_figure), trend_figure['layout']['shapes'])
+        update_trend_week(trend_figure, selected_week)
+
         return trend_figure
     else:
         # cache the blank trend plot in the global variable
         trendlines_fig = make_base_trend_plot(session_id)
+        update_trend_week(trendlines_fig, selected_week)
         return trendlines_fig
 
 
@@ -379,6 +430,16 @@ marks={i:pretty_weeks[i] for i in range(num_weeks)}
 def layout():
     session_id = str(uuid.uuid4())
     return html.Div([
+        dbc.Row([
+            html.Div([
+                html.H1('Salt Lake County : COVID-19 Mobility Data Network'),
+            ]),
+            html.Div([
+                html.Img(src='assets/covid19.png', height=50),
+                html.Img(src='assets/cu.png', height=50),
+                html.Img(src='assets/csu.jpg', height=50)
+            ], style={'float':'right'})
+        ]),
         dbc.Col([
             dbc.Row( [
                 dbc.Col( dcc.Graph(id='map',
@@ -398,7 +459,9 @@ def layout():
             dbc.Row([dcc.Graph(id='weekend_scatter',
                       style={'height':'30vh','width':'80%','margin':'0'}),
                       dcc.Graph(id='weekend_hist_y',
-                                style={'height':'30vh','width':'20%','margin':'0'})]),
+                                style={'height':'30vh',
+                                       'width':'20%',
+                                       'margin':'0'})]),
             dcc.Graph(id='weekend_score',
                       style={'height':'30vh','margin-top':'5px'}),
             dcc.Graph(id='slip_score',
