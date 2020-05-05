@@ -326,7 +326,7 @@ divided by standard deviation of other similarly dense tiles
 
 *Hot spot scores for three tiles. The hot spot score (blue) is the difference between the current 3-day mean(black horizontal) and the week one 3-day mean with the same start day divided by the variance (black vertical). The three examples here show a hot spot (a significant increase over week one), a neutral spot (no significant change from week one), and a cold spot (a significant decrease over week one).*
 ```
-python src/n_slip_scores.py \
+python src/hot_spot_scores.py \
     -i colorado_city_scores.20200422.txt \
     -o imgs/colorado_hotspot_scores.png \
     -n 938,720,54 \
@@ -358,13 +358,29 @@ python src/density.py \
     --width 7
 ```
 
-![](imgs/colorado_hot_spot.png)
+Hot spot scores can either as plotted as a histogram, with respect to baseline
+density, or as a map (via shapefile).
+| ![](imgs/colorado_hot_spot_hist.png) | ![](imgs/colorado_hot_spot.png) |  ![](imgs/colorado_hotspot_shapefile.png) |
+| --- | --- | --- |
 
-*The current hot-spot score for every tile. Positive values indicate that the
-current density is higher today than it was in the first week. Negative values
-indicate the current density is less.
+*Hot-spot scores for every tile. Positive values indicate that the current
+density is higher today than it was in the first week. Negative values indicate
+the current density is less. Left: Plotted versus baseline density. Right: Viewed as
+as shapefile*
 
 ```
+python src/hot_spot_scores.py \
+    -i colorado_city_scores.20200422.txt \
+| cut -f6 \
+| paste -sd '\t' - \
+| src/hist.py \
+    -o imgs/colorado_hot_spot_hist.png \
+    -b 50 \
+    -x 'Hot spot score' \
+    -y 'Freq' \
+    --width 2 --height 2
+
+
 python src/plot_hot_spot_x_density.py \
     -i colorado_city_scores.20200422.txt \
     -o imgs/colorado_hot_spot.png \
@@ -373,4 +389,8 @@ python src/plot_hot_spot_x_density.py \
     --height 2 \
     -x 'Baseline density' \
     -y 'Current hot-spot score' 
+
+python src/make_hot_spot_shapefile.py \
+    -i colorado_city_scores.20200422.txt \
+    -o colorado_hostpot
 ```
