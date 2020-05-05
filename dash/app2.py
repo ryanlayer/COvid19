@@ -199,20 +199,20 @@ def slip_score_callback(selected_week,ss_data,point_indexes):
                         horizontal_spacing = 0.0,
                         vertical_spacing = 0.0)
 
-    fig.add_trace(go.Histogram(x=Y), row=1, col=1)
+    fig.add_trace(go.Histogram(x=X,marker_color=default_point_color), row=1, col=1)
     fig.update_xaxes(showticklabels=False,
                      row=1, col=1)
     fig.update_yaxes( title_text='Freq',
                      row=1, col=1)
-    fig.add_trace(go.Histogram(y=X), row=2, col=2)
+    fig.add_trace(go.Histogram(y=Y,marker_color=default_point_color), row=2, col=2)
     fig.update_yaxes(showticklabels=False,
                      row=2, col=2)
     fig.update_xaxes(title_text='Freq',
                      row=2, col=2)
-    #fig.update_xaxes(range=[-2,2], row=1, col=1)
 
     fig.add_trace(traces[0], row=2, col=1)
-    #fig.update_xaxes(range=[-2,2], row=2, col=1)
+
+    #fig.update_xaxes(range=[-10,1500], row=2, col=1)
 
     fig.update_layout(dict(
         #xaxis={'title':'Baseline density'},
@@ -228,7 +228,6 @@ def slip_score_callback(selected_week,ss_data,point_indexes):
     fig.update_yaxes(title_text=y_label, row=2, col=1)
 
     return fig
-
 
 
 def weekend_score_callback(selected_week,ws_data,point_indexes):
@@ -276,19 +275,21 @@ def weekend_score_callback(selected_week,ws_data,point_indexes):
                         vertical_spacing = 0.0)
 
 
-    fig.add_trace(go.Histogram(x=Y), row=1, col=1)
+    fig.add_trace(go.Histogram(x=Y, marker_color=default_point_color), row=1, col=1)
     fig.update_xaxes(showticklabels=False,
                      row=1, col=1)
     fig.update_yaxes( title_text='Freq',
                      row=1, col=1)
-    fig.add_trace(go.Histogram(y=X), row=2, col=2)
+
+    fig.add_trace(go.Histogram(y=X, marker_color=default_point_color), row=2, col=2)
     fig.update_yaxes(showticklabels=False,
                      row=2, col=2)
     fig.update_xaxes(title_text='Freq',
                      row=2, col=2)
-    #fig.update_xaxes(range=[-2,2], row=1, col=1)
 
     fig.add_trace(traces[0], row=2, col=1)
+
+    #fig.update_xaxes(range=[-2,2], row=1, col=1)
     #fig.update_xaxes(range=[-2,2], row=2, col=1)
 
     fig.update_layout(dict(
@@ -487,8 +488,15 @@ ss_df = pd.read_csv('slip.csv')
 ws_df = pd.read_csv('ws.csv')
 trend_df = pd.read_csv('trend.csv')
 
-y_min = ss_df.iloc[:,5:].min().min()
-y_max = ss_df.iloc[:,5:].max().max()
+ss_y_min = ss_df.iloc[:,5:].min().min()
+ss_y_max = ss_df.iloc[:,5:].max().max()
+
+ws_min = ws_df.iloc[:,5:].min().min()
+ws_max = ws_df.iloc[:,5:].max().max()
+baseline_density_min = ss_df.baseline_density.min()
+baseline_density_max = ss_df.baseline_density.max()
+
+
 
 
 num_weeks = len(ss_df.columns[5:])
@@ -523,30 +531,8 @@ def layout():
             ],no_gutters=True),
         ],width=8,style={'float': 'left','height':'100vh','padding':'0'}),
         dbc.Col([
-            #dbc.Row([dcc.Graph(id='weekend_hist_x',
-                  #style={'height':'10vh','width':'80%','margin':'0'})]),
-            dbc.Row([dcc.Graph(id='weekend_score',
-                      style={#'height':'33vh',
-                             'width':'100%',
-                            #'margin':'0'
-                      }),
-                      #dcc.Graph(id='weekend_hist_y',
-                                #style={'height':'30vh',
-                                       #'width':'20%',
-                                       #'margin':'0'})
-            ]),
-            #dbc.Row([dcc.Graph(id='ss_hist_x',
-                  #style={'height':'10vh','width':'80%','margin':'0'})]),
-            dbc.Row([dcc.Graph(id='slip_score',
-                      style={#'height':'33vh',
-                             'width':'100%',
-                             #'margin':'0'
-                      }),
-                      #dcc.Graph(id='ss_hist_y',
-                                #style={'height':'35vh',
-                                       #'width':'20%',
-                                       #'margin':'0'})
-            ]),
+            dcc.Graph(id='weekend_score'),
+            dcc.Graph(id='slip_score'),
             dcc.Slider(id='week-slider',
                        min=0,
                        max=num_weeks-1,
