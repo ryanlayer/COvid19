@@ -17,15 +17,6 @@ crisis_range = {'start':24}
 
 #{{{
 
-def get_timepoints(header, vals, timepoint):
-    t_y = []
-    t_x = []
-    for j in range(len(header)):
-        if header[j].split(' ')[-1] == timepoint:
-            t_x.append(j)
-            t_y.append(vals[j])
-    return (t_x, t_y)
-
 def get_windows(header, window):
 
     last_day = header[0].split(' ')[1]
@@ -51,31 +42,6 @@ def get_windows(header, window):
 
     return W
 
-
-def get_week_means(scores):
-    week_i = 0
-    week_means = []
-    W = []
-    for j in range(0,len(scores),21):
-        c_week = scores[j:j+21]
-        if len(c_week) < 21:
-            continue
-        W.append( np.mean(c_week) )
-    return W
-
-def plot_ss(ax, header, mean, start_x):
-
-    curr_x = start_x
-
-    for i in range(len(header)):
-        c='black'
-        point1 = [curr_x - 0.5, mean]
-        point2 = [curr_x + 0.5, mean]
-        x_values = [point1[0], point2[0]]
-        y_values = [point1[1], point2[1]]
-        ax.plot(x_values, y_values, c=c, lw=0.5)
-        curr_x+=1
-    return curr_x
 
 def clear_ax(ax):
     ax.spines['top'].set_visible(False)
@@ -122,15 +88,12 @@ def label_days(ax, header):
     ax.set_xticks(ticks)
     ax.set_xticklabels(labels, fontsize=4)
 
-def show_legend(ax):
-    handles, labels = ax.get_legend_handles_labels()
-    by_label = dict(zip(labels, handles))
-    ax.legend(by_label.values(),
-              by_label.keys(),
-              frameon=False,
-              bbox_to_anchor=(0.95,0.7),
-              loc='center left',
-              fontsize=4)
+def show_legend(fig):
+    fig.legend(frameon=False,
+               loc='upper right',
+               fontsize=4,
+               ncol=2)
+
 
 def mark_weeks(ax, header):
 
@@ -200,6 +163,16 @@ parser.add_argument('--height',
                     default=5,
                     help='Plot height (default 5)')
 
+parser.add_argument('--ymin',
+                    dest='ymin',
+                    type=float,
+                    default=-2)
+
+parser.add_argument('--ymax',
+                    dest='ymax',
+                    type=float,
+                    default=2)
+
 args = parser.parse_args()
 
 
@@ -264,7 +237,7 @@ for c in C:
         mean = np.mean(curr)
         stdev = np.std(curr)
 
-        dow_stats[start_day].append((mean,stdev))
+        dow_stats[start_day].append((mean,stdev,start,end))
 
     c_stats['dow_stats'] = dow_stats
 
@@ -296,8 +269,9 @@ for c in C:
     c_stats['Z_x'] = Z_x
     c_stats['Z_y'] = Z_y
 
-    O = [c_i] + L[c_i] + [Z_y[-1]]
-    print('\t'.join([str(o) for o in O]))
+    if not args.quiet:
+        O = [c_i] + L[c_i] + [np.mean(B[c_i]),Z_y[-1]]
+        print('\t'.join([str(o) for o in O]))
 
     C_plot_stats.append(c_stats)
     c_i += 1
@@ -345,39 +319,47 @@ for i in to_plot:
 
     dow_stats = C_plot_stats[i]['dow_stats']
 
-    for j in range(len(windows)):
-        start_day = windows[j][0][1]
-        start = windows[j][0][0]
-        end = windows[j][1][0]
+    #current
+    start_day = windows[-1][0][1]
+    start = windows[-1][0][0]
+    end = windows[-1][1][0]
 
-        mean = C_plot_stats[i]['window_means'][j]
-        stdev = C_plot_stats[i]['window_stdevs'][j]
+    mean = C_plot_stats[i]['window_means'][-1]
+    stdev = C_plot_stats[i]['window_stdevs'][-1]
 
+    c='black'
+    point1 = [(start+end)/2, mean + stdev]
+    point2 = [(start+end)/2, mean - stdev]
+    x_values = [point1[0], point2[0]]
+    y_values = [point1[1], point2[1]]
+    ax.plot(x_values, y_values, c=c, lw=0.5)
 
-        c='black'
-        point1 = [(start+end)/2, mean + stdev]
-        point2 = [(start+end)/2, mean - stdev]
-        x_values = [point1[0], point2[0]]
-        y_values = [point1[1], point2[1]]
-        ax.plot(x_values, y_values, c=c, lw=0.5, label='Curr mean')
+    c='black'
+    point1 = [start-0.5, mean]
+    point2 = [end-1+0.5, mean]
+    x_values = [point1[0], point2[0]]
+    y_values = [point1[1], point2[1]]
+    ax.plot(x_values, y_values, c=c, lw=0.5, label='Curr mean')
 
-        c='black'
-        point1 = [start-0.5, mean]
-        point2 = [end-1+0.5, mean]
-        x_values = [point1[0], point2[0]]
-        y_values = [point1[1], point2[1]]
-        ax.plot(x_values, y_values, c=c, lw=0.5)
+    c='red'
+    bl_start = dow_stats[start_day][0][2]
+    bl_end = dow_stats[start_day][0][3]
+    bl_point1 = [bl_start-0.5, dow_stats[start_day][0][0]]
+    bl_point2 = [bl_end-1+0.5, dow_stats[start_day][0][0]]
+    x_values = [bl_point1[0], bl_point2[0]]
+    y_values = [bl_point1[1], bl_point2[1]]
+    ax.plot(x_values, y_values, c=c, lw=0.5, label='Week 1 mean')
 
-        c='red'
-        point1 = [start-0.5, dow_stats[start_day][0][0]]
-        point2 = [end-1+0.5, dow_stats[start_day][0][0]]
-        x_values = [point1[0], point2[0]]
-        y_values = [point1[1], point2[1]]
-        ax.plot(x_values, y_values, c=c, lw=0.5, label='Week 1 mean')
+    x_values = [bl_point1[0], point2[0]]
+    y_values = [bl_point1[1], bl_point2[1]]
+    ax.plot(x_values, y_values, c=c, ls='--', alpha = 0.5, lw=0.5)
 
-    Z_x = C_plot_stats[i]['Z_x']
-    Z_y = C_plot_stats[i]['Z_y']
-    ax2.plot(Z_x,Z_y,'-o',marker='x',c='blue',lw=0.75,markersize=1,label='Z-score')
+    hs_x = [C_plot_stats[i]['Z_x'][-1]]
+    hs_y = [C_plot_stats[i]['Z_y'][-1]]
+
+    ax2.scatter(hs_x,hs_y,2,c='blue', label='Hot-spot score')
+    ax2.set_ylim([args.ymin,args.ymax])
+    ax2.set_ylabel('Hot-spot score', fontsize=4)
 
     ax.set_ylabel('Density', fontsize=4)
 
@@ -385,11 +367,10 @@ for i in to_plot:
     clear_ax(ax)
     shade_weekends(ax, crisis_header)
 
-
     mark_weeks(ax, crisis_header)
 
     if i == to_plot[0]:
-        show_legend(ax)
+        show_legend(fig)
 
     if i == to_plot[-1]:
         label_days(ax, crisis_header)

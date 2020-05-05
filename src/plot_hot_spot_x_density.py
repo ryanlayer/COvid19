@@ -5,43 +5,42 @@ import matplotlib.pyplot as plt
 from statsmodels.tsa.seasonal import seasonal_decompose
 import argparse
 import csv
+import collections
+from sklearn.linear_model import LinearRegression
+
+Window = collections.namedtuple('Window', 'index dayofweek')
 
 shape_i = 0
 baseline_range = {'start':3, 'end':24}
 crisis_range = {'start':24}
 
-#{{{
-def get_week_means(scores):
-    week_i = 0
-    week_means = []
+def get_windows(header, window):
+
+    last_day = header[0].split(' ')[1]
+    d = [(0,last_day)]
+    header_i = 0
+    D = []
+
+    for field in header:
+        state,day,date,time = field.split(' ')
+
+        if day != last_day:
+            #d.append((header_i,last_day))
+            d.append( Window(index=header_i, dayofweek=last_day))
+            last_day = day
+            if d[1][0] - d[0][0] == window:
+                D.append(d)
+            #d = [(header_i,day)]
+            d = [Window(index=header_i, dayofweek=day)]
+        header_i += 1
+
     W = []
-    for j in range(0,len(scores),21):
-        c_week = scores[j:j+21]
-        if len(c_week) < 21:
-            continue
-        W.append( np.mean(c_week) )
+    for i in range(len(D)- window + 1):
+        curr = D[i:i+window] #points in the current window
+        W.append((curr[0][0],curr[-1][1]))
+
     return W
 
-def plot_ws(ax, header, wd_u, we_u, ws, start_x):
-
-    curr_x = start_x
-
-    for i in range(len(header)):
-        timepoint = header[i].split(' ')
-        day = timepoint[1]
-        time = timepoint[-1]
-        score = wd_u
-        color = 'black'
-        if day in ['Saturday', 'Sunday']:
-            score = we_u
-
-        point1 = [curr_x - 0.5, score]
-        point2 = [curr_x + 0.5, score]
-        x_values = [point1[0], point2[0]]
-        y_values = [point1[1], point2[1]]
-        ax.plot(x_values, y_values, c=color, lw=0.5)
-        curr_x+=1
-    return curr_x
 
 def clear_ax(ax):
     ax.spines['top'].set_visible(False)
@@ -53,67 +52,7 @@ def clear_ax(ax):
     ax.yaxis.set_tick_params(width=0.0, labelsize=6)
     ax.xaxis.set_tick_params(width=0.0, labelsize=6)
 
-def shade_weekends(ax, header):
-    x_i = 0
-    for field in header[baseline_range['start']:]:
-        timepoint = field.split(' ')
-        day = timepoint[1]
-        time = timepoint[-1]
-        alpha = 0.1
-        if day in ['Saturday', 'Sunday']:
-            alpha = 0.25
-
-        start = x_i - 0.5
-        end = x_i + 0.5
-        if time == '0200':
-            start = x_i - 0.45
-        elif time == '1800':
-            end = x_i + 0.45
-
-        ax.axvspan(start, end, facecolor = 'gray', alpha = alpha)
-        x_i += 1
-
-def label_days(ax, header):
-    x_i = 0
-    ticks = []
-    labels = []
-    for field in header[baseline_range['start']:]:
-        timepoint = field.split(' ')
-        if timepoint[-1] == '1000':
-            ticks.append(x_i)
-            labels.append(timepoint[1][0])
-        x_i+=1
-
-    ax.get_xaxis().set_visible(True)
-    ax.set_xticks(ticks)
-    ax.set_xticklabels(labels, fontsize=4)
-
-def show_legend(ax):
-    ax.legend(frameon=False,
-              loc=0,
-              fontsize=4)
-
-def mark_weeks(ax, header):
-
-    week_start = None
-
-    x_i = 0
-
-    for field in header[baseline_range['start']:]:
-        timepoint = field.split(' ')
-
-        if timepoint[0] == 'crisis':
-            if week_start is None:
-                week_start = (timepoint[1], timepoint[3])
-                ax.axvline(x=x_i, ls='--', c='gray', lw=0.5)
-            elif timepoint[1] == week_start[0] \
-                    and timepoint[3] == week_start[1]:
-                ax.axvline(x=x_i, ls='--', c='gray', lw=0.5)
-
-
-        x_i+=1
-#}}}
-
+#{{{parser = argparse.ArgumentParser()
 parser = argparse.ArgumentParser()
 
 parser.add_argument('-i',
@@ -129,10 +68,11 @@ parser.add_argument('--shapename',
                     dest='shapename',
                     help='Shape to plot')
 
-parser.add_argument('-n',
-                    dest='n',
-                    type=str,
-                    help='CSV of records to plot')
+parser.add_argument('-w',
+                    '--window',
+                    dest='window',
+                    default=3,
+                    help='Window size in days')
 
 parser.add_argument('--width',
                     dest='width',
@@ -151,11 +91,6 @@ parser.add_argument('--alpha',
                     type=float,
                     default=0.5,
                     help='Alpha (default 0.5)')
-
-parser.add_argument('--weeks',
-                    dest='weeks',
-                    default='1,2',
-                    help='Weeks CSV (default 1,2)')
 
 parser.add_argument('-x',
                     '--x_label',
@@ -178,42 +113,48 @@ parser.add_argument('--y_max',
                     help='Max y-axsis bounds')
 
 args = parser.parse_args()
-
+#}}}
 
 input_file = csv.reader(open(args.infile), delimiter='\t')
 header = None
-S = []
-M = []
-loc = []
+crisis_header = None
+L = []
+B = []
+C = []
+row_i = 1
+windows = None
 for row in input_file:
     if header is None:
         header = row
+        crisis_header = row[crisis_range['start']:]
+        windows = get_windows(crisis_header, args.window)
         continue
 
     if args.shapename is None or row[shape_i] == args.shapename:
 
-        loc.append(row[1:3])
-
-        O = row[0:3] 
-
+        L.append(row[0:3])
+        
         b = row[baseline_range['start']:baseline_range['end']]
         b = [float(x) for x in b]
-
-        baseline_mean = get_week_means(b)
-        S += baseline_mean
 
         c = row[crisis_range['start']:]
         c = [float(x) for x in c]
 
-        week_i = 0
-        crisis_week_means = get_week_means(c)
+        B.append([float(x) for x in b])
+        C.append([float(x) for x in c])
 
-        means = baseline_mean + crisis_week_means
+        row_i += 1
 
-        M.append(means)
+# get a model for the stdev based on size
+C_stats = []
 
-if args.outfile is None:
-    sys.exit(0)
+for c in C:
+    C_stats.append( ( np.mean(c), np.std(c) ) )
+
+model = LinearRegression()
+x=[[c[0]] for c in C_stats]
+y=[[c[1]] for c in C_stats]
+model.fit(x,y)
 
 fig = plt.figure(figsize=(args.width,args.height), dpi=300)
 
@@ -233,25 +174,56 @@ inner_grid = gridspec.GridSpecFromSubplotSpec(\
 
 ax = fig.add_subplot(inner_grid[0])
 
-week1,week2 = [int(i) for i in args.weeks.split(',')]
-scores = [np.log2(m[week2]/m[week1]) for m in M]
+c_i = 0
+X = []
+Y = []
+for c in C:
 
-ax.scatter(S,scores,alpha=args.alpha)
+    dow_stats = {}
 
-mean = np.mean(scores)
+    for w in windows:
+        start_day = w[0].dayofweek
+        start = w[0].index
+        end = w[1].index
+        if start_day not in dow_stats:
+            dow_stats[start_day] = []
+
+        curr = c[start:end] 
+        mean = np.mean(curr)
+        stdev = np.std(curr)
+
+        dow_stats[start_day].append((mean,stdev))
+    
+    x = np.mean(B[c_i])
+
+    last_w = windows[-1]
+    start_day = last_w[0].dayofweek
+    start = last_w[0].index
+    end = last_w[1].index
+
+    curr = c[start:end] 
+    mean = np.mean(curr)
+    stdev = model.predict([[mean]])[0][0]
+
+    z = (mean - dow_stats[start_day][0][0] ) / stdev
+
+    X.append(x)
+    Y.append(z)
+
+    c_i+=1
+
+ax.scatter(X,Y,alpha=args.alpha)
+
+mean = np.mean(Y)
+
 ax.axhline(y=mean, ls='-', lw=0.5, c='red')
+
 ax.text(ax.get_xlim()[1],
         mean,
         str(round(mean,2)),
         fontsize=8,
         verticalalignment='top',
         horizontalalignment='right')
-
-#ax.axhline(y=np.log2(1.01), ls='--', lw=0.5, c='black')
-#ax.axhline(y=np.log2(0.99), ls='--', lw=0.5, c='black')
-#
-#ax.axhline(y=np.log2(1.10), ls='--', lw=0.5, c='black')
-#ax.axhline(y=np.log2(0.90), ls='--', lw=0.5, c='black')
 
 ax.axhline(y=0, lw=0.25, c='black')
 
