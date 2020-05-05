@@ -167,7 +167,7 @@ $ python src/plot_ws_x_ws.py \
     --alpha 0.25
 ```
 
-## Slip score (ss)
+## Slip score (ss) (![formula](https://render.githubusercontent.com/render/math?math=ss))
 
 The behavior of a region after a stay-at-home order is issued depends on the
 region’s demographics, which complicates monitoring. For example, economic
@@ -302,4 +302,75 @@ $ python src/plot_shapes_mean_trend.py \
     -o imgs/boulder_co_cities_mean_trends.png \
     --width 3 \
     --height 2
+```
+
+## Hot spots (![formula](https://render.githubusercontent.com/render/math?math=hs))
+
+Assuming that stay-at-home adherence was at its best the week after an order
+was issued (week 1), then we define "hot spots" as regions with significatnly
+higher density levels relative to that baseline.  To reduce the effects of
+outliers we use a 3-day mean, and to control for weekend/weekday effects we
+match days of the week when comparing current and week one values.
+
+The hot-spot (![formula](https://render.githubusercontent.com/render/math?math=hs))
+score for a tile is the difference between the current 3-day mean
+(![formula](https://render.githubusercontent.com/render/math?math=\overline{\mu_c}))
+and the 3-day mean from the same starting day in the first week
+(![formula](https://render.githubusercontent.com/render/math?math=\overline{\mu_0}))
+divided by standard deviation of other similarly dense tiles
+(![formula](https://render.githubusercontent.com/render/math?math=\hat{\sigma})).
+
+![formula](https://render.githubusercontent.com/render/math?math=(\overline{\mu_c}-\overline{\mu_0})/\hat{\sigma})
+
+![](imgs/colorado_hotspot_scores.png)
+
+*Hot spot scores for three tiles. The hot spot score (blue) is the difference between the current 3-day mean(black horizontal) and the week one 3-day mean with the same start day divided by the variance (black vertical). The three examples here show a hot spot (a significant increase over week one), a neutral spot (no significant change from week one), and a cold spot (a significant decrease over week one).*
+```
+python src/n_slip_scores.py \
+    -i colorado_city_scores.20200422.txt \
+    -o imgs/colorado_hotspot_scores.png \
+    -n 938,720,54 \
+    --width 5 \
+    --height 3 \
+    --ymin -7 \
+    --ymax 7
+
+```
+
+
+We are using a broader set of tiles to calculate
+![formula](https://render.githubusercontent.com/render/math?math=\hat{\sigma})
+because we have been collecting data for only a few weeks, and we have
+relatively few observations for a given tile. To increase the number of samples
+used to calculate the standard deviation, we fit a linear model to the mean
+density and standard deviation of all tiles, then use that model to predict the
+variance for the current tile.
+
+![](imgs/colorado_mean_x_variance.png)
+
+*The mean and standard deviation of all tiles, and the linear model fit to the data.*
+
+```
+python src/density.py \
+    -i colorado_city_scores.20200422.txt \
+    -o imgs/colorado_mean_x_variance.png \
+    --height 2 \
+    --width 7
+```
+
+![](imgs/colorado_hot_spot.png)
+
+*The current hot-spot score for every tile. Positive values indicate that the
+current density is higher today than it was in the first week. Negative values
+indicate the current density is less.
+
+```
+python src/plot_hot_spot_x_density.py \
+    -i colorado_city_scores.20200422.txt \
+    -o imgs/colorado_hot_spot.png \
+    --alpha 0.25 \
+    --width 3 \
+    --height 2 \
+    -x 'Baseline density' \
+    -y 'Current hot-spot score' 
 ```

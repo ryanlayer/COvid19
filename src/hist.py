@@ -10,6 +10,13 @@ import argparse
 #{{{
 parser = argparse.ArgumentParser()
 
+parser.add_argument("--rows",
+                    dest="rows",
+                    type=int,
+                    default=1,
+                    help="Nubmer of rows in figure")
+
+
 parser.add_argument("--xticks",
                     dest="xticks",
                     help="CSV ints to tick and label")
