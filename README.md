@@ -241,7 +241,7 @@ a model, we can decompose a series into its seasons and trends, which provides
 a means to compare tiles with different weekday/weekend activities (seasons).
 
 ![](imgs/colorado_example_season_trend_split.png)
-* Density data from four tiles decomposed into their patterns and trends.*
+*Density data from four tiles decomposed into their patterns and trends.*
 
 ```
 $ python src/trends.py     -i colorado_city_scores.20200422.txt |  sort -t$'\t' -k 5,5g  | tail -n 2
