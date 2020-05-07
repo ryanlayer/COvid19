@@ -126,6 +126,13 @@ parser.add_argument('-n',
                     type=str,
                     help='CSV of records to plot')
 
+parser.add_argument('--delim',
+                    dest='delim',
+                    type=str,
+                    default='\t',
+                    help='Output delimiter (default tab)')
+
+
 parser.add_argument('--width',
                     dest='width',
                     type=float,
@@ -148,6 +155,7 @@ B = []
 C = []
 M = []
 row_i = 1
+out_header = False
 for row in input_file:
     if header is None:
         header = row
@@ -170,11 +178,22 @@ for row in input_file:
 
         M.append(means)
 
-        o = [row_i] + row[0:3]
+        o = [row_i] + row[0:3] + [np.mean(b)]
         for i in range(1,len(means)):
             o.append(np.log2(means[i]/means[i-1]))
 
-        print('\t'.join([str(x) for x in o]))
+        if not out_header:
+            h = ['index',
+                 'name',
+                 'lon',
+                 'lat',
+                 'baseline_density']
+            for i in range(1,len(means)):
+                h.append('week_' + str(i) + '_ss')
+            print(args.delim.join(h))
+            out_header = True
+
+        print(args.delim.join([str(x) for x in o]))
 
         B.append([float(x) for x in b])
         C.append([float(x) for x in c])
