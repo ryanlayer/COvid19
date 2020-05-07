@@ -188,7 +188,7 @@ their new patterns we developed a slip score
 This metric assumes that adherence to these orders is best immediately
 following their issuance, then tracks changes by comparing the average weekly
 density 
-(![formula](https://render.githubusercontent.com/render/math?math=d_i)
+![formula](https://render.githubusercontent.com/render/math?math=d_i)
  of consecutive weeks,
 
 ![formula](https://render.githubusercontent.com/render/math?math=ss=\log_2(d_2/d_1))
@@ -317,7 +317,7 @@ $ python src/plot_shapes_mean_trend.py \
 ## Hot spots (![formula](https://render.githubusercontent.com/render/math?math=hs))
 
 Assuming that stay-at-home adherence was at its best the week after an order
-was issued (week 1), then we define "hot spots" as regions with significatnly
+was issued (week 1), then we define "hot spots" as regions with significantly
 higher density levels relative to that baseline.  To reduce the effects of
 outliers we use a 3-day mean, and to control for weekend/weekday effects we
 match days of the week when comparing current and week one values.
@@ -327,7 +327,7 @@ score for a tile is the difference between the current 3-day mean
 (![formula](https://render.githubusercontent.com/render/math?math=\overline{\mu_c}))
 and the 3-day mean from the same starting day in the first week
 (![formula](https://render.githubusercontent.com/render/math?math=\overline{\mu_0}))
-divided by standard deviation of other similarly dense tiles
+divided by standard deviation of 3-day means for other similarly dense tiles
 (![formula](https://render.githubusercontent.com/render/math?math=\hat{\sigma})).
 
 ![formula](https://render.githubusercontent.com/render/math?math=(\overline{\mu_c}-\overline{\mu_0})/\hat{\sigma})
