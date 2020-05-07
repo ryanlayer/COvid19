@@ -1,6 +1,16 @@
 # COvid19
 Providing social distancing situational awareness during the COVID-19 pandemic in Colorado
 
+## Table of contents
+   * [Setup](#setup)
+   * [Methods](#methods)
+      * [Weekend Score](#weekend-score-)
+      * [Slip Score](#slip-score-ss-)
+      * [Trends](#trends)
+      * [Hot Spots](#hot-spots-)
+   * [Interactive Data Browser](#tests)
+
+
 ## Setup
 - Set up conda environment
 ```
@@ -394,3 +404,15 @@ python src/make_hot_spot_shapefile.py \
     -i colorado_city_scores.20200422.txt \
     -o colorado_hostpot
 ```
+
+## Interactive Data Browser
+
+![](imgs/SLC_data_browser.png)
+
+We have also developed an interactive data browser that links these metrics to
+maps using [plotyly dash](https://plotly.com/dash/). Code and details on
+getting the server running are in the `dash` folder.
+
+Here is a short demo video
+
+[![](https://img.youtube.com/vi/2xV9VDY7vG8/0.jpg)](https://www.youtube.com/watch?v=2xV9VDY7vG8)
