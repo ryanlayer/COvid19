@@ -1,4 +1,4 @@
-# COvid19
+![](imgs/covid19.png)
 Providing social distancing situational awareness during the COVID-19 pandemic in Colorado
 
 ## Table of contents
