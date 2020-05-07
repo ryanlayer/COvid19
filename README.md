@@ -1,4 +1,5 @@
-![](imgs/covid19.png)
+<img src="imgs/covid19.png" height="100">
+
 Providing social distancing situational awareness during the COVID-19 pandemic in Colorado
 
 ## Table of contents
