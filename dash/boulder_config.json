@@ -1,0 +1,8 @@
+{
+    "slip_data":"boulder_slip.csv",
+    "trend_data":"boulder_trend.csv",
+    "weekend_data":"boulder_ws.csv",
+    "title":"Boulder County County : COVID-19 Mobility Data Network",
+    "start_lat":40.071928, 
+    "start_lon":-105.365839
+}

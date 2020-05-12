@@ -12,6 +12,21 @@ import uuid
 import time
 import copy
 import datetime
+import json
+
+def timeit(method):
+    def timed(*args, **kw):
+        ts = time.time()
+        result = method(*args, **kw)
+        te = time.time()
+        if 'log_time' in kw:
+            name = kw.get('log_name', method.__name__.upper())
+            kw['log_time'][name] = int((te - ts) * 1000)
+        else:
+            print('%r  %2.2f ms' % \
+                  (method.__name__, (te - ts) * 1000))
+        return result
+    return timed
 
 class MaxSizeCache:
     def __init__(self, size):
@@ -49,10 +64,11 @@ class MaxSizeCache:
 #external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 external_stylesheets = [dbc.themes.BOOTSTRAP]
 default_point_color = '#69A0CB'
-trend_session_cache = MaxSizeCache(100)
+trend_session_cache = MaxSizeCache(300)
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
 
+@timeit
 def get_map(lats, lons, lat, lon, indexes):
     mapbox_access_token = open(".mapbox_token").read()
     colors = [default_point_color] * len(lats)
@@ -120,8 +136,8 @@ def update_scatter_plots(selected_week,
                          map_data,
                          map_selection,
                          trend_figure):
-    lon = 40.588928
-    lat = -112.071533
+    lon = config['start_lat']
+    lat = config['start_lon']
     lons = list(ws_df['lon'])
     lats = list(ws_df['lat'])
     ctx = dash.callback_context
@@ -153,6 +169,7 @@ def update_scatter_plots(selected_week,
            get_map(lons, lats, lon, lat, indexes)
 
 
+@timeit
 def slip_score_callback(selected_week,ss_data,point_indexes):
     slip_weeks = ss_df.columns[5:]
     selected_col = slip_weeks[selected_week]
@@ -230,6 +247,7 @@ def slip_score_callback(selected_week,ss_data,point_indexes):
     return fig
 
 
+@timeit
 def weekend_score_callback(selected_week,ws_data,point_indexes):
     ws_weeks = ws_df.columns[6:]
     selected_col = ws_weeks[selected_week]
@@ -266,7 +284,6 @@ def weekend_score_callback(selected_week,ws_data,point_indexes):
     x_label = 'Week ' + str(selected_week) + ' weekend score'
     if selected_week == 0:
         x_label = 'Baseline weekend score'
-    #fig = go.Figure()
 
     fig = make_subplots(rows=2, cols=2,
                         row_heights=[0.15, 0.85],
@@ -289,81 +306,15 @@ def weekend_score_callback(selected_week,ws_data,point_indexes):
 
     fig.add_trace(traces[0], row=2, col=1)
 
-    #fig.update_xaxes(range=[-2,2], row=1, col=1)
-    #fig.update_xaxes(range=[-2,2], row=2, col=1)
-
     fig.update_layout(dict(
-        #xaxis={'title':'Baseline density'},
-        #yaxis={'title':y_label},
         hovermode='closest',
         transition = {'duration': 500},
-        # margin={'t':10,'l':50,'r':0}
         margin={'t':0,'b':0,'r':0,'l':0}
     ))
     fig.update_layout(showlegend=False)
     fig.update_xaxes(title_text=x_label, row=2, col=1)
     fig.update_yaxes(title_text=y_label, row=2, col=1)
-    # fig.update_xaxes(range=[-0.75, 1.75])
-    # fig.update_yaxes(range=[-0.75, 1.75])
     return fig
-
-
-#@app.callback(
-#    Output('weekend_hist_y', 'figure'),
-#    [Input('week-slider', 'value')])
-#def make_ws_hist_y(selected_week):
-#    ws_weeks = ws_df.columns[6:]
-#    y = ws_df[ws_weeks[selected_week]]
-#    fig = go.Figure(data=[go.Histogram(y=y)])
-#    fig.update_yaxes(showticklabels=False)
-#    # fig.update_yaxes(tickfont=dict(color='white'))
-#    # fig.update_xaxes(tickfont=dict(color='white'))
-#    fig.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
-#    # fig.update_yaxes(range=[-0.75, 1.75])
-#    return fig
-
-#@app.callback(
-#    Output('weekend_hist_x', 'figure'),
-#    [Input('week-slider', 'value')])
-#def make_ws_hist_x(selected_week):
-#    ws_weeks = ws_df.columns[6:]
-#    x = ws_df[ws_weeks[selected_week-1]]
-#    fig = go.Figure(data=[go.Histogram(x=x)])
-#    # fig.update_yaxes(tickfont=dict(color='white'))
-#    fig.update_xaxes(tickfont=dict(color='white'))
-#    fig.update_xaxes(showticklabels=False)
-#    fig.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
-#    # fig.update_xaxes(range=[-0.75, 1.75])
-#    return fig
-#
-#@app.callback(
-#    Output('ss_hist_y', 'figure'),
-#    [Input('week-slider', 'value')])
-#def make_ss_hist_y(selected_week):
-#    ss_weeks = ss_df.columns[5:]
-#    y = ss_df[ss_weeks[selected_week]]
-#    fig = go.Figure(data=[go.Histogram(y=y)])
-#    fig.update_yaxes(showticklabels=False)
-#    # fig.update_yaxes(tickfont=dict(color='white'))
-#    # fig.update_xaxes(tickfont=dict(color='white'))
-#    fig.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
-#    # fig.update_yaxes(range=[-0.75, 1.75])
-#    return fig
-#
-#@app.callback(
-#    Output('ss_hist_x', 'figure'),
-#    [Input('week-slider', 'value')])
-#def make_ss_hist_x(selected_week):
-#    ss_weeks = ss_df.columns[5:]
-#    # x = ss_df[ss_weeks[0]]
-#    x = list(ss_df['baseline_density'])
-#    fig = go.Figure(data=[go.Histogram(x=x)])
-#    # fig.update_yaxes(tickfont=dict(color='white'))
-#    # fig.update_xaxes(tickfont=dict(color='white'))
-#    fig.update_xaxes(showticklabels=False)
-#    fig.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
-#    fig.update_xaxes(range=[-100, 1250])
-#    return fig
 
 def get_date_time(header):
     date_time = []
@@ -400,7 +351,7 @@ def update_trend_week(fig, week):
                     line_width=0)
         ])
 
-
+@timeit
 def make_base_trend_plot(session_id):
     fig = go.Figure()
     dow_date_time= [ x.split()[1:] for x in trend_df.columns[6:]]
@@ -434,6 +385,7 @@ def make_base_trend_plot(session_id):
 
     return fig
 
+@timeit
 def make_new_trends(indexes):
     dow_date_time= [ x.split()[1:] for x in trend_df.columns[6:]]
     date_time = get_date_time(trend_df.columns[6:])
@@ -442,14 +394,9 @@ def make_new_trends(indexes):
     b_norm = 1 + (5*((b - np.min(b)) / np.max(b)))
 
     traces = []
-    for idx,row in trend_df.iterrows():
-        line_color = default_point_color
-        opactiy = 0.2
-        if idx in indexes:
-            line_color = 'red'
-            opactiy = 1.0
-        else:
-            continue
+    for idx,row in trend_df.iloc[indexes,:].iterrows():    
+        line_color = 'red'
+        opactiy = 1.0
         y = row.tolist()[6:]
         x = date_time
         loc = str(row.lat) + ',' + str(row.lon)
@@ -462,6 +409,7 @@ def make_new_trends(indexes):
                             type='scatter'))
     return traces
 
+@timeit
 def make_trend(selected_week, indexes, session_id, trend_figure):
     # check if the base figures already exists in memory
     if trend_figure is not None and len(trend_figure) != 0:
@@ -484,9 +432,11 @@ def make_trend(selected_week, indexes, session_id, trend_figure):
         return trendlines_fig
 
 
-ss_df = pd.read_csv('slip.csv')
-ws_df = pd.read_csv('ws.csv')
-trend_df = pd.read_csv('trend.csv')
+config = json.load(open('boulder_config.json'))
+
+ss_df = pd.read_csv(config['slip_data'])
+ws_df = pd.read_csv(config['weekend_data'])
+trend_df = pd.read_csv(config['trend_data'])
 
 ss_y_min = ss_df.iloc[:,5:].min().min()
 ss_y_max = ss_df.iloc[:,5:].max().max()
@@ -509,7 +459,7 @@ def layout():
     return html.Div([
         dbc.Row([
             html.Div([
-                html.H1('Salt Lake County : COVID-19 Mobility Data Network'),
+                html.H1(config['title']),
             ],style={'grid-row': '1','grid-column': '2'}),
             html.Div([
                 html.Img(src='assets/covid19.png', height=50),
@@ -520,10 +470,10 @@ def layout():
         dbc.Col([
             dbc.Row( [
                 dbc.Col( dcc.Graph(id='map',
-                                   figure=get_map([40.588928],
-                                                  [-112.071533],
-                                                  40.588928,
-                                                  -112.071533,[0]),
+                                   figure=get_map([config['start_lat']],
+                                                  [config['start_lon']],
+                                                  config['start_lat'],
+                                                  config['start_lon'],[0]),
                                    style={'height':'47vh'})),
             ],no_gutters=True),
             dbc.Row([
