@@ -80,44 +80,6 @@ parser.add_argument('-w',
                     default=3,
                     help='Window size in days')
 
-parser.add_argument('--width',
-                    dest='width',
-                    type=float,
-                    default=5,
-                    help='Plot width (default 5)')
-
-parser.add_argument('--height',
-                    dest='height',
-                    type=float,
-                    default=5,
-                    help='Plot height (default 5)')
-
-parser.add_argument('--alpha',
-                    dest='alpha',
-                    type=float,
-                    default=0.5,
-                    help='Alpha (default 0.5)')
-
-parser.add_argument('-x',
-                    '--x_label',
-                    dest='x_label',
-                    help='X-axsis label')
-
-parser.add_argument('-y',
-                    '--y_label',
-                    dest='y_label',
-                    help='Y-axsis label')
-
-parser.add_argument('--y_min',
-                    dest='y_min',
-                    type=float,
-                    help='Min y-axsis bounds')
-
-parser.add_argument('--y_max',
-                    dest='y_max',
-                    type=float,
-                    help='Max y-axsis bounds')
-
 args = parser.parse_args()
 #}}}
 
