@@ -2,6 +2,9 @@
 import sys
 import glob
 import subprocess
+import sqlite3
+import os
+
 from optparse import OptionParser
 parser = OptionParser()
 
@@ -21,21 +24,33 @@ if not options.csv_path:
     parser.error('Path to csvs not given')
 
 f = open('tmp.sql', 'w')
-
 f.write(".mode csv\n")
 
-first = True
-for n in glob.glob(options.csv_path + '/*csv'):
-    if first:
-        f.write('.import "' + n + '" pop_tile\n')
-        first = False
-    else:
-        f.write(".import '| tail -n+2 \"" + n + "\"' pop_tile\n")
+if os.path.exists(options.db_path):
+    conn = sqlite3.connect(options.db_path)
+    c = conn.cursor()
+    c.execute('SELECT MAX(date_time) FROM pop_tile')
+    last_db_date = c.fetchone()[0]
 
-f.close()
+    for n in glob.glob(options.csv_path + '/*csv'):
+        date_stamp = n.split('_')[-1].split('.')[0]
 
+        if date_stamp > last_db_date:
+            f.write(".import '| tail -n+2 \"" + n + "\"' pop_tile\n")
 
-bashCommand = 'rm -f ' + options.db_path + ';sqlite3 ' + options.db_path + ' < tmp.sql'
-print(bashCommand)
-#process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
-#output, error = process.communicate()
+    f.close()
+    print('sqlite3 ' + options.db_path + ' < tmp.sql')
+else:
+    first = True
+    for n in glob.glob(options.csv_path + '/*csv'):
+        if first:
+            f.write('.import "' + n + '" pop_tile\n')
+            first = False
+        else:
+            f.write(".import '| tail -n+2 \"" + n + "\"' pop_tile\n")
+
+    f.close()
+    bashCommand = 'rm -f ' + options.db_path + ';sqlite3 ' + options.db_path + ' < tmp.sql'
+    print(bashCommand)
+    #process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
+    #output, error = process.communicate()
