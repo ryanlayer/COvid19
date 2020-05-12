@@ -18,11 +18,26 @@ $  python src/trends.py \
     -i utah_county_scores.20200506.txt \
     --shapename "Salt Lake" \
     --delim "," > trend.csv
-``
-- Start the app
 ```
-$ python app2.py
+
+- Make config file
+
+`slc_config.json`
+```
+{
+    "slip_data":"slip.csv",
+    "trend_data":"trend.csv",
+    "weekend_data":"ws.csv",
+    "title":"Salt Lake County : COVID-19 Mobility Data Network",
+    "start_lat":40.588928,
+    "start_lon":-112.071533
+}
+```
+
+- Start the app
+
+```
+$ python local_dashboard.py -c slc_config.json
 ```
 
 Goto the local page at `http://127.0.0.1:8050/`
-

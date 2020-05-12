@@ -13,6 +13,14 @@ import time
 import copy
 import datetime
 import json
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument('-c',
+                    dest='config',
+                    required=True,
+                    help='Config file')
+args = parser.parse_args()
 
 def timeit(method):
     def timed(*args, **kw):
@@ -432,7 +440,7 @@ def make_trend(selected_week, indexes, session_id, trend_figure):
         return trendlines_fig
 
 
-config = json.load(open('boulder_config.json'))
+config = json.load(open(args.config))
 
 ss_df = pd.read_csv(config['slip_data'])
 ws_df = pd.read_csv(config['weekend_data'])
