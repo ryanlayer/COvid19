@@ -58,6 +58,8 @@ def get_map(lats, lons, lat, lon, indexes):
     colors = [default_point_color] * len(lats)
     opacity = [0.25] * len(lats)
     for index in indexes:
+        if index == -1:
+            continue
         colors[index] = 'red'
         opacity[index] = 1.0
     fig = go.Figure(go.Scattermapbox(\
@@ -120,8 +122,9 @@ def update_scatter_plots(selected_week,
                          map_data,
                          map_selection,
                          trend_figure):
-    lon = 40.588928
-    lat = -112.071533
+    # default lon and lat to be the center of the data being plotted
+    lat = sum(ss_df['lat']) / ss_df.shape[0]
+    lon = sum(ss_df['lon']) / ss_df.shape[0]
     lons = list(ws_df['lon'])
     lats = list(ws_df['lat'])
     ctx = dash.callback_context
@@ -505,6 +508,8 @@ pretty_weeks = ['Week ' + str(i+1) for i in range(num_weeks)]
 marks={i:pretty_weeks[i] for i in range(num_weeks)}
 
 def layout():
+    start_lat = sum(ss_df['lat']) / ss_df.shape[0]
+    start_lon = sum(ss_df['lon']) / ss_df.shape[0]
     session_id = str(uuid.uuid4())
     return html.Div([
         dbc.Row([
@@ -520,10 +525,10 @@ def layout():
         dbc.Col([
             dbc.Row( [
                 dbc.Col( dcc.Graph(id='map',
-                                   figure=get_map([40.588928],
-                                                  [-112.071533],
-                                                  40.588928,
-                                                  -112.071533,[0]),
+                                   figure=get_map([start_lat],
+                                                  [start_lon],
+                                                  None,
+                                                  None,[]),
                                    style={'height':'47vh'})),
             ],no_gutters=True),
             dbc.Row([
