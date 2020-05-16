@@ -52,6 +52,19 @@ default_point_color = '#69A0CB'
 trend_session_cache = MaxSizeCache(100)
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
+def x_round(x):
+    return round(x*4)/4
+
+def make_unique_trends_df(tdf):
+    df = tdf.iloc[:,5:]
+    vals = list(df.iloc[:,-1])
+
+    rounded_vals = [x_round(x) for x in vals]
+
+    keepers = [rounded_vals.index(x) for x in set(rounded_vals)]
+
+    sub = trend_df[trend_df.index.isin(keepers)]
+    return sub
 
 def get_map(lats, lons, lat, lon, indexes):
     mapbox_access_token = open(".mapbox_token").read()
@@ -406,28 +419,31 @@ def update_trend_week(fig, week):
 
 def make_base_trend_plot(session_id):
     fig = go.Figure()
-    dow_date_time= [ x.split()[1:] for x in trend_df.columns[6:]]
-    date_time = get_date_time(trend_df.columns[6:])
+    dow_date_time= [ x.split()[1:] for x in unique_trend_df.columns[6:]]
+    date_time = get_date_time(unique_trend_df.columns[6:])
 
-    b = np.array(trend_df.baseline_density.tolist())
+    b = np.array(unique_trend_df.baseline_density.tolist())
     b_norm = 1 + (5*((b - np.min(b)) / np.max(b)))
 
     traces = []
-    for idx,row in trend_df.iterrows():
+    for idx,row in unique_trend_df.iterrows():
         line_color = default_point_color
         opactiy = 0.2
         y = row.tolist()[6:]
         x = date_time
         loc = str(row.lat) + ',' + str(row.lon)
+        try:
+            index = list(unique_trend_df.index).index(idx)
+        except ValueError:
+            index = 0
         traces.append(go.Scatter(x=x,
                                  y=y,
                                  text=loc,
                                  opacity=opactiy,
-                                 line=dict(width=b_norm[idx],
+                                 line=dict(width=b_norm[index],
                                            color=line_color)))
     trace_indexes = list(range(len(traces)))
-
-    trend_session_cache.add_to_cache(session_id,trace_indexes)
+    trend_session_cache.add_to_cache(session_id,list(unique_trend_df.index))
     for t in traces:
         fig.add_trace(t)
 
@@ -470,7 +486,7 @@ def make_trend(selected_week, indexes, session_id, trend_figure):
     if trend_figure is not None and len(trend_figure) != 0:
         # add more traces on top of the base plot
         traces = make_new_trends(indexes)
-        trace_indexes = list(range(trend_df.shape[0]))
+        trace_indexes = list(unique_trend_df.index)
         # remove the traces previously added to highlight specific traces
         trend_figure['data'] = trend_figure['data'][:len(trace_indexes)]
         for i in indexes:
@@ -490,6 +506,7 @@ def make_trend(selected_week, indexes, session_id, trend_figure):
 ss_df = pd.read_csv('slip.csv')
 ws_df = pd.read_csv('ws.csv')
 trend_df = pd.read_csv('trend.csv')
+unique_trend_df = make_unique_trends_df(trend_df)
 
 ss_y_min = ss_df.iloc[:,5:].min().min()
 ss_y_max = ss_df.iloc[:,5:].max().max()
