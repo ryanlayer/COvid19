@@ -170,24 +170,24 @@ def update_scatter_plots(selected_week,
 
 
 def slip_score_callback(selected_week,ss_data,point_indexes):
-    slip_weeks = ss_df.columns[5:]
+
+    slip_weeks = unique_ss.columns[5:]
     selected_col = slip_weeks[selected_week]
-    df_indexes = list(range(ss_df.shape[0]))
+    df_indexes = list(unique_ss.index)
     point_color = default_point_color
-    filtered_df = ss_df[['baseline_density',selected_col]]
+    filtered_df = unique_ss[['baseline_density',selected_col]]
 
     X = list(filtered_df['baseline_density'])
     Y = list(filtered_df[selected_col])
-    df_indexes = list(range(len(X)))
-    marker_colors = [default_point_color] * len(X)
 
-    if point_indexes[0] != -1:
-        point_color = 'red'
-        # move the point of interest to the end so it displays on top
-        for index in point_indexes:
-            X,Y,df_indexes = move_all_index_to_end(X,Y,df_indexes,index)
-            marker_colors = move_index_to_end(marker_colors,index)
-            marker_colors[-1] = 'red'
+    marker_colors = [default_point_color] * len(X)
+    # if there are points selected, add them!
+    if len(point_indexes) > 0 and point_indexes[0] != -1:
+        for i in point_indexes:
+            X.append(ss_df['baseline_density'][i])
+            Y.append(ss_df[selected_col][i])
+            df_indexes.append(i)
+            marker_colors.append('red')
 
     traces = []
     traces.append(dict(
@@ -247,22 +247,22 @@ def slip_score_callback(selected_week,ss_data,point_indexes):
 
 
 def weekend_score_callback(selected_week,ws_data,point_indexes):
-    ws_weeks = ws_df.columns[6:]
+    ws_weeks = unique_ws.columns[6:]
     selected_col = ws_weeks[selected_week]
     point_color = default_point_color
-    X = list(ws_df['baseline_ws'])
-    Y = list(ws_df[selected_col])
-    df_indexes = list(range(len(X)))
+    X = list(unique_ws['baseline_ws'])
+    Y = list(unique_ws[selected_col])
+    df_indexes = list(unique_ws.index)
 
     marker_colors = [default_point_color] * len(X)
 
     if point_indexes[0] != -1:
         point_color = 'red'
-        # move the point of interest to the end so it displays on top
         for index in point_indexes:
-            X,Y,df_indexes = move_all_index_to_end(X,Y,df_indexes,index)
-            marker_colors = move_index_to_end(marker_colors,index)
-            marker_colors[-1] = 'red'
+            X.append(ws_df['baseline_ws'][index])
+            Y.append(ws_df[selected_col][index])
+            df_indexes.append(index)
+            marker_colors.append('red')
 
     traces = []
     traces.append(dict(
@@ -282,7 +282,6 @@ def weekend_score_callback(selected_week,ws_data,point_indexes):
     x_label = 'Week ' + str(selected_week) + ' weekend score'
     if selected_week == 0:
         x_label = 'Baseline weekend score'
-    #fig = go.Figure()
 
     fig = make_subplots(rows=2, cols=2,
                         row_heights=[0.15, 0.85],
@@ -323,63 +322,6 @@ def weekend_score_callback(selected_week,ws_data,point_indexes):
     # fig.update_yaxes(range=[-0.75, 1.75])
     return fig
 
-
-#@app.callback(
-#    Output('weekend_hist_y', 'figure'),
-#    [Input('week-slider', 'value')])
-#def make_ws_hist_y(selected_week):
-#    ws_weeks = ws_df.columns[6:]
-#    y = ws_df[ws_weeks[selected_week]]
-#    fig = go.Figure(data=[go.Histogram(y=y)])
-#    fig.update_yaxes(showticklabels=False)
-#    # fig.update_yaxes(tickfont=dict(color='white'))
-#    # fig.update_xaxes(tickfont=dict(color='white'))
-#    fig.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
-#    # fig.update_yaxes(range=[-0.75, 1.75])
-#    return fig
-
-#@app.callback(
-#    Output('weekend_hist_x', 'figure'),
-#    [Input('week-slider', 'value')])
-#def make_ws_hist_x(selected_week):
-#    ws_weeks = ws_df.columns[6:]
-#    x = ws_df[ws_weeks[selected_week-1]]
-#    fig = go.Figure(data=[go.Histogram(x=x)])
-#    # fig.update_yaxes(tickfont=dict(color='white'))
-#    fig.update_xaxes(tickfont=dict(color='white'))
-#    fig.update_xaxes(showticklabels=False)
-#    fig.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
-#    # fig.update_xaxes(range=[-0.75, 1.75])
-#    return fig
-#
-#@app.callback(
-#    Output('ss_hist_y', 'figure'),
-#    [Input('week-slider', 'value')])
-#def make_ss_hist_y(selected_week):
-#    ss_weeks = ss_df.columns[5:]
-#    y = ss_df[ss_weeks[selected_week]]
-#    fig = go.Figure(data=[go.Histogram(y=y)])
-#    fig.update_yaxes(showticklabels=False)
-#    # fig.update_yaxes(tickfont=dict(color='white'))
-#    # fig.update_xaxes(tickfont=dict(color='white'))
-#    fig.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
-#    # fig.update_yaxes(range=[-0.75, 1.75])
-#    return fig
-#
-#@app.callback(
-#    Output('ss_hist_x', 'figure'),
-#    [Input('week-slider', 'value')])
-#def make_ss_hist_x(selected_week):
-#    ss_weeks = ss_df.columns[5:]
-#    # x = ss_df[ss_weeks[0]]
-#    x = list(ss_df['baseline_density'])
-#    fig = go.Figure(data=[go.Histogram(x=x)])
-#    # fig.update_yaxes(tickfont=dict(color='white'))
-#    # fig.update_xaxes(tickfont=dict(color='white'))
-#    fig.update_xaxes(showticklabels=False)
-#    fig.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
-#    fig.update_xaxes(range=[-100, 1250])
-#    return fig
 
 def get_date_time(header):
     date_time = []
@@ -504,7 +446,9 @@ def make_trend(selected_week, indexes, session_id, trend_figure):
 
 
 ss_df = pd.read_csv('slip.csv')
+unique_ss = pd.read_csv('unique_ss.csv',index_col = 0)
 ws_df = pd.read_csv('ws.csv')
+unique_ws = pd.read_csv('unique_ws.csv',index_col = 0)
 trend_df = pd.read_csv('trend.csv')
 unique_trend_df = make_unique_trends_df(trend_df)
 
