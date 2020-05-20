@@ -512,7 +512,7 @@ def layout():
 
 
 app.layout = layout
-
+app.title = 'COvid-19'
 
 if __name__ == '__main__':
     app.run_server(debug=True)
