@@ -179,6 +179,8 @@ def slip_score_callback(selected_week,ss_data,point_indexes):
 
     X = list(filtered_df['baseline_density'])
     Y = list(filtered_df[selected_col])
+    hist_X = list(ss_df['baseline_density'])
+    hist_Y = list(ss_df[selected_col])
 
     marker_colors = [default_point_color] * len(X)
     # if there are points selected, add them!
@@ -215,20 +217,18 @@ def slip_score_callback(selected_week,ss_data,point_indexes):
                         horizontal_spacing = 0.0,
                         vertical_spacing = 0.0)
 
-    fig.add_trace(go.Histogram(x=X,marker_color=default_point_color), row=1, col=1)
+    fig.add_trace(go.Histogram(x=hist_X,marker_color=default_point_color), row=1, col=1)
     fig.update_xaxes(showticklabels=False,
                      row=1, col=1)
     fig.update_yaxes( title_text='Freq',
                      row=1, col=1)
-    fig.add_trace(go.Histogram(y=Y,marker_color=default_point_color), row=2, col=2)
+    fig.add_trace(go.Histogram(y=hist_Y,marker_color=default_point_color), row=2, col=2)
     fig.update_yaxes(showticklabels=False,
                      row=2, col=2)
     fig.update_xaxes(title_text='Freq',
                      row=2, col=2)
 
     fig.add_trace(traces[0], row=2, col=1)
-
-    #fig.update_xaxes(range=[-10,1500], row=2, col=1)
 
     fig.update_layout(dict(
         #xaxis={'title':'Baseline density'},
@@ -238,10 +238,13 @@ def slip_score_callback(selected_week,ss_data,point_indexes):
         # margin={'t':10,'l':50,'r':0}
         margin={'t':0,'b':0,'r':0,'l':0}
     ))
-
+    min_y = round(min(hist_Y), 2)
+    max_y = round(max(hist_Y), 2)
+    min_x = int(round(min(hist_X)))
+    max_x = int(round(max(hist_X)))
     fig.update_layout(showlegend=False)
-    fig.update_xaxes(title_text='Baseline density', row=2, col=1)
-    fig.update_yaxes(title_text=y_label, row=2, col=1)
+    fig.update_xaxes(title_text='Baseline density', row=2, col=1, range=[min_x, max_x])
+    fig.update_yaxes(title_text=y_label, row=2, col=1, range=[min_y, max_y])
 
     return fig
 
@@ -252,6 +255,8 @@ def weekend_score_callback(selected_week,ws_data,point_indexes):
     point_color = default_point_color
     X = list(unique_ws['baseline_ws'])
     Y = list(unique_ws[selected_col])
+    hist_X = list(ws_df['baseline_ws'])
+    hist_Y = list(ws_df[selected_col])
     df_indexes = list(unique_ws.index)
 
     marker_colors = [default_point_color] * len(X)
@@ -290,13 +295,13 @@ def weekend_score_callback(selected_week,ws_data,point_indexes):
                         vertical_spacing = 0.0)
 
 
-    fig.add_trace(go.Histogram(x=Y, marker_color=default_point_color), row=1, col=1)
+    fig.add_trace(go.Histogram(x=hist_Y, marker_color=default_point_color), row=1, col=1)
     fig.update_xaxes(showticklabels=False,
                      row=1, col=1)
     fig.update_yaxes( title_text='Freq',
                      row=1, col=1)
 
-    fig.add_trace(go.Histogram(y=X, marker_color=default_point_color), row=2, col=2)
+    fig.add_trace(go.Histogram(y=hist_X, marker_color=default_point_color), row=2, col=2)
     fig.update_yaxes(showticklabels=False,
                      row=2, col=2)
     fig.update_xaxes(title_text='Freq',
@@ -304,9 +309,10 @@ def weekend_score_callback(selected_week,ws_data,point_indexes):
 
     fig.add_trace(traces[0], row=2, col=1)
 
-    #fig.update_xaxes(range=[-2,2], row=1, col=1)
-    #fig.update_xaxes(range=[-2,2], row=2, col=1)
-
+    min_y = round(min(hist_Y), 2)
+    max_y = round(max(hist_Y), 2)
+    min_x = round(min(hist_X), 2)
+    max_x = round(max(hist_X), 2)
     fig.update_layout(dict(
         #xaxis={'title':'Baseline density'},
         #yaxis={'title':y_label},
@@ -316,10 +322,9 @@ def weekend_score_callback(selected_week,ws_data,point_indexes):
         margin={'t':0,'b':0,'r':0,'l':0}
     ))
     fig.update_layout(showlegend=False)
-    fig.update_xaxes(title_text=x_label, row=2, col=1)
-    fig.update_yaxes(title_text=y_label, row=2, col=1)
-    # fig.update_xaxes(range=[-0.75, 1.75])
-    # fig.update_yaxes(range=[-0.75, 1.75])
+    fig.update_xaxes(title_text=x_label, row=2, col=1, range=[min_x,max_x])
+    fig.update_yaxes(title_text=y_label, row=2, col=1, range=[min_y,max_y])
+
     return fig
 
 
