@@ -47,7 +47,7 @@ class MaxSizeCache:
                 del self.cache[keys[i]]
 
 #external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
-external_stylesheets = [dbc.themes.BOOTSTRAP]
+external_stylesheets = [dbc.themes.BOOTSTRAP,'style.css']
 default_point_color = '#69A0CB'
 trend_session_cache = MaxSizeCache(100)
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
@@ -502,15 +502,15 @@ def layout():
             ],no_gutters=True),
         ],width=8,style={'float': 'left','height':'100vh','padding':'0'}),
         dbc.Col([
-            dcc.Graph(id='weekend_score'),
-            dcc.Graph(id='slip_score'),
+            dcc.Graph(id='weekend_score',style={'height':'44vh'}),
+            dcc.Graph(id='slip_score',style={'height':'44vh'}),
             dcc.Slider(id='week-slider',
                        min=0,
                        max=num_weeks-1,
                        value=num_weeks-1,
                        marks=marks,
                    step=None)
-        ],width=4,style={'float': 'left','height':'100vh'}),
+        ],width=4,style={'float': 'left','height':'90vh'}),
         # Hidden div inside the app that stores the intermediate value
         html.Div(session_id,id='session-id', style={'display': 'none'})
     ])
