@@ -1,0 +1,3 @@
+url	ss	ws	trend	unique_ss	unique_ws
+boulder	location_data/boulder_slip.csv	location_data/boulder_ws.csv	location_data/boulder_trend.csv	location_data/unique_boulder_slip.csv	location_data/unique_boulder_ws.csv
+arapahoe	location_data/Arapahoe_slip.csv	location_data/Arapahoe_ws.csv	location_data/Arapahoe_trend.csv	location_data/unique_Arapahoe_slip.csv	location_data/unique_Arapahoe_ws.csv

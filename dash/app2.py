@@ -63,8 +63,31 @@ def make_unique_trends_df(tdf):
 
     keepers = [rounded_vals.index(x) for x in set(rounded_vals)]
 
-    sub = trend_df[trend_df.index.isin(keepers)]
+    sub = tdf[tdf.index.isin(keepers)]
     return sub
+
+
+def prep_session_data(session_id,url_path_name):
+    if url_path_name is None:
+        return
+
+    id = str(session_id)
+    if trend_session_cache.in_cache(id+'_ss') and trend_session_cache.in_cache(id+'_ws') and trend_session_cache.in_cache(id+'_trends') and trend_session_cache.in_cache(id+'_unique_ss') and trend_session_cache.in_cache(id+'_unique_ws') and trend_session_cache.in_cache(id+'_unique_trends'):
+        print('In')
+        return
+
+    print('Not in')
+    cities_df = pd.read_csv('cities.tsv',sep='\t')
+    if url_path_name[0] == '/':
+        url_path_name = url_path_name[1:]
+    sub = cities_df[cities_df['url'] == url_path_name]
+
+    trend_session_cache.add_to_cache(id+'_ss',pd.read_csv(list(sub['ss'])[0]))
+    trend_session_cache.add_to_cache(id+'_ws',pd.read_csv(list(sub['ws'])[0]))
+    trend_session_cache.add_to_cache(id+'_trends',pd.read_csv(list(sub['trend'])[0]))
+    trend_session_cache.add_to_cache(id+'_unique_ss',pd.read_csv(list(sub['unique_ss'])[0],index_col = 0))
+    trend_session_cache.add_to_cache(id+'_unique_ws',pd.read_csv(list(sub['unique_ws'])[0],index_col = 0))
+    trend_session_cache.add_to_cache(id+'_unique_trends',make_unique_trends_df(trend_session_cache.get(id+'_trends')))
 
 def get_map(lats, lons, lat, lon, indexes):
     mapbox_access_token = open(".mapbox_token").read()
@@ -125,7 +148,8 @@ def move_all_index_to_end(X,Y,df_indexes,index):
     Input('trend_lines','clickData'),
     Input('session-id','children'),
     Input('map','clickData'),
-    Input('map','selectedData')],
+    Input('map','selectedData'),
+    Input('url', 'pathname')],
     [State('trend_lines', 'figure')])
 def update_scatter_plots(selected_week,
                          ss_data,
@@ -134,12 +158,25 @@ def update_scatter_plots(selected_week,
                          session_id,
                          map_data,
                          map_selection,
+                         url_path_name,
                          trend_figure):
+    prep_session_data(session_id,url_path_name)
     # default lon and lat to be the center of the data being plotted
-    lat = sum(ss_df['lat']) / ss_df.shape[0]
-    lon = sum(ss_df['lon']) / ss_df.shape[0]
-    lons = list(ws_df['lon'])
-    lats = list(ws_df['lat'])
+    try:
+        ss_df = trend_session_cache.get(str(session_id) + '_ss')
+        ws_df = trend_session_cache.get(str(session_id) + '_ws')
+        trend_df = trend_session_cache.get(session_id+'_trends')
+        unique_trend_df = trend_session_cache.get(session_id+'_unique_trends')
+        lat = sum(ss_df['lat']) / ss_df.shape[0]
+        lon = sum(ss_df['lon']) / ss_df.shape[0]
+        lons = list(ws_df['lon'])
+        lats = list(ws_df['lat'])
+    except KeyError:
+        lat = 0
+        lon = 0
+        lons = []
+        lats = []
+
     ctx = dash.callback_context
     indexes = [-1]
     if ctx.triggered[0]['prop_id'] == 'weekend_score.clickData':
@@ -163,14 +200,18 @@ def update_scatter_plots(selected_week,
         indexes = [x['pointNumber'] for x in map_selection['points']]
         lon = ss_df.iloc[indexes[0],:]['lon']
         lat = ss_df.iloc[indexes[0],:]['lat']
-    return slip_score_callback(selected_week,ss_data,indexes),  \
-           weekend_score_callback(selected_week,ws_data,indexes), \
+    return slip_score_callback(selected_week,session_id,indexes),  \
+           weekend_score_callback(selected_week,session_id,indexes), \
            make_trend(selected_week,indexes,session_id,trend_figure), \
            get_map(lons, lats, lon, lat, indexes)
 
 
-def slip_score_callback(selected_week,ss_data,point_indexes):
-
+def slip_score_callback(selected_week,session_id,point_indexes):
+    try:
+        unique_ss = trend_session_cache.get(str(session_id) + '_unique_ss')
+        ss_df = trend_session_cache.get(str(session_id) + '_ss')
+    except KeyError:
+        return go.Figure()
     slip_weeks = unique_ss.columns[5:]
     selected_col = slip_weeks[selected_week]
     df_indexes = list(unique_ss.index)
@@ -249,7 +290,13 @@ def slip_score_callback(selected_week,ss_data,point_indexes):
     return fig
 
 
-def weekend_score_callback(selected_week,ws_data,point_indexes):
+def weekend_score_callback(selected_week,session_id,point_indexes):
+    try:
+        unique_ws = trend_session_cache.get(str(session_id) + '_unique_ws')
+        ws_df = trend_session_cache.get(str(session_id) + '_ws')
+    except KeyError:
+        return go.Figure()
+
     ws_weeks = unique_ws.columns[6:]
     selected_col = ws_weeks[selected_week]
     point_color = default_point_color
@@ -342,7 +389,12 @@ def get_date_time(header):
                                            int(m) ))
     return date_time
 
-def update_trend_week(fig, week):
+def update_trend_week(fig, week,session_id):
+    try:
+        trend_df = trend_session_cache.get(session_id+'_trends')
+        unique_trend_df = trend_session_cache.get(session_id+'_unique_trends')
+    except KeyError:
+        return go.Figure()
     dow_date_time= [ x.split()[1:] for x in trend_df.columns[6:]]
     date_time = get_date_time(trend_df.columns[6:])
     if isinstance(fig, dict):
@@ -365,6 +417,11 @@ def update_trend_week(fig, week):
 
 
 def make_base_trend_plot(session_id):
+    try:
+        trend_df = trend_session_cache.get(session_id+'_trends')
+        unique_trend_df = trend_session_cache.get(session_id+'_unique_trends')
+    except KeyError:
+        return go.Figure()
     fig = go.Figure()
     dow_date_time= [ x.split()[1:] for x in unique_trend_df.columns[6:]]
     date_time = get_date_time(unique_trend_df.columns[6:])
@@ -400,7 +457,8 @@ def make_base_trend_plot(session_id):
 
     return fig
 
-def make_new_trends(indexes):
+def make_new_trends(indexes,session_id):
+    trend_df = trend_session_cache.get(session_id+'_trends')
     dow_date_time= [ x.split()[1:] for x in trend_df.columns[6:]]
     date_time = get_date_time(trend_df.columns[6:])
 
@@ -429,10 +487,14 @@ def make_new_trends(indexes):
     return traces
 
 def make_trend(selected_week, indexes, session_id, trend_figure):
+    try:
+        unique_trend_df = trend_session_cache.get(session_id+'_unique_trends')
+    except KeyError:
+        return go.Figure()
     # check if the base figures already exists in memory
     if trend_figure is not None and len(trend_figure) != 0:
         # add more traces on top of the base plot
-        traces = make_new_trends(indexes)
+        traces = make_new_trends(indexes,session_id)
         trace_indexes = list(unique_trend_df.index)
         # remove the traces previously added to highlight specific traces
         trend_figure['data'] = trend_figure['data'][:len(trace_indexes)]
@@ -440,44 +502,40 @@ def make_trend(selected_week, indexes, session_id, trend_figure):
             trace_indexes.append(i)
         for t in traces:
             trend_figure['data'].append(t)
-        trend_session_cache.add_to_cache(session_id,trace_indexes)
+        trend_session_cache.add_to_cache(session_id, trace_indexes)
 
-        update_trend_week(trend_figure, selected_week)
+        update_trend_week(trend_figure, selected_week, session_id)
         return trend_figure
     else:
         trendlines_fig = make_base_trend_plot(session_id)
-        update_trend_week(trendlines_fig, selected_week)
+        update_trend_week(trendlines_fig, selected_week, session_id)
         return trendlines_fig
 
 
-ss_df = pd.read_csv('slip.csv')
-unique_ss = pd.read_csv('unique_ss.csv',index_col = 0)
-ws_df = pd.read_csv('ws.csv')
-unique_ws = pd.read_csv('unique_ws.csv',index_col = 0)
-trend_df = pd.read_csv('trend.csv')
-unique_trend_df = make_unique_trends_df(trend_df)
-
-ss_y_min = ss_df.iloc[:,5:].min().min()
-ss_y_max = ss_df.iloc[:,5:].max().max()
-
-ws_min = ws_df.iloc[:,5:].min().min()
-ws_max = ws_df.iloc[:,5:].max().max()
-baseline_density_min = ss_df.baseline_density.min()
-baseline_density_max = ss_df.baseline_density.max()
+# ss_df = pd.read_csv('slip.csv')
+# unique_ss = pd.read_csv('unique_ss.csv',index_col = 0)
+# ws_df = pd.read_csv('ws.csv')
+# unique_ws = pd.read_csv('unique_ws.csv',index_col = 0)
+# trend_df = pd.read_csv('trend.csv')
+# unique_trend_df = make_unique_trends_df(trend_df)
 
 
 
-
-num_weeks = len(ss_df.columns[5:])
-pretty_weeks = ['Week ' + str(i+1) for i in range(num_weeks)]
-
-marks={i:pretty_weeks[i] for i in range(num_weeks)}
 
 def layout():
+    session_id = str(uuid.uuid4())
+
+    cities = pd.read_csv('cities.tsv',sep='\t')
+    ss_df = pd.read_csv(list(cities['unique_ss'])[0],index_col=0)
+    num_weeks = len(ss_df.columns[5:])
+    pretty_weeks = ['Week ' + str(i+1) for i in range(num_weeks)]
+
+    marks={i:pretty_weeks[i] for i in range(num_weeks)}
     start_lat = sum(ss_df['lat']) / ss_df.shape[0]
     start_lon = sum(ss_df['lon']) / ss_df.shape[0]
-    session_id = str(uuid.uuid4())
+
     return html.Div([
+        dcc.Location(id='url', refresh=False),
         dbc.Row([
             html.Div([
                 html.H1('Salt Lake County : COVID-19 Mobility Data Network'),
