@@ -12,6 +12,8 @@ import uuid
 import time
 import copy
 import datetime
+from flask import request
+
 
 class MaxSizeCache:
     def __init__(self, size):
@@ -73,10 +75,8 @@ def prep_session_data(session_id,url_path_name):
 
     id = str(session_id)
     if trend_session_cache.in_cache(id+'_ss') and trend_session_cache.in_cache(id+'_ws') and trend_session_cache.in_cache(id+'_trends') and trend_session_cache.in_cache(id+'_unique_ss') and trend_session_cache.in_cache(id+'_unique_ws') and trend_session_cache.in_cache(id+'_unique_trends'):
-        print('In')
         return
 
-    print('Not in')
     cities_df = pd.read_csv('cities.tsv',sep='\t')
     if url_path_name[0] == '/':
         url_path_name = url_path_name[1:]
@@ -161,6 +161,7 @@ def update_scatter_plots(selected_week,
                          url_path_name,
                          trend_figure):
     prep_session_data(session_id,url_path_name)
+
     # default lon and lat to be the center of the data being plotted
     try:
         ss_df = trend_session_cache.get(str(session_id) + '_ss')
@@ -512,28 +513,33 @@ def make_trend(selected_week, indexes, session_id, trend_figure):
         return trendlines_fig
 
 
-# ss_df = pd.read_csv('slip.csv')
-# unique_ss = pd.read_csv('unique_ss.csv',index_col = 0)
-# ws_df = pd.read_csv('ws.csv')
-# unique_ws = pd.read_csv('unique_ws.csv',index_col = 0)
-# trend_df = pd.read_csv('trend.csv')
-# unique_trend_df = make_unique_trends_df(trend_df)
+@app.callback(
+    [Output('week-slider', 'min'),
+    Output('week-slider', 'max'),
+    Output('week-slider', 'value'),
+    Output('week-slider', 'marks')],
+    [Input('url', 'pathname'),
+    Input('session-id','children')])
+def make_slider(url_path_name,session_id):
+    if url_path_name is None:
+        return 0,0,0,{}
+    cities_df = pd.read_csv('cities.tsv',sep='\t')
+    if url_path_name[0] == '/':
+        url_path_name = url_path_name[1:]
+    sub = cities_df[cities_df['url'] == url_path_name]
 
+    ss_df = pd.read_csv(list(sub['unique_ss'])[0],index_col=0)
 
-
-
-def layout():
-    session_id = str(uuid.uuid4())
-
-    cities = pd.read_csv('cities.tsv',sep='\t')
-    ss_df = pd.read_csv(list(cities['unique_ss'])[0],index_col=0)
     num_weeks = len(ss_df.columns[5:])
     pretty_weeks = ['Week ' + str(i+1) for i in range(num_weeks)]
 
     marks={i:pretty_weeks[i] for i in range(num_weeks)}
-    start_lat = sum(ss_df['lat']) / ss_df.shape[0]
-    start_lon = sum(ss_df['lon']) / ss_df.shape[0]
 
+    return 0, num_weeks-1,num_weeks-1, marks
+
+
+def layout():
+    session_id = str(uuid.uuid4())
     return html.Div([
         dcc.Location(id='url', refresh=False),
         dbc.Row([
@@ -549,8 +555,8 @@ def layout():
         dbc.Col([
             dbc.Row( [
                 dbc.Col( dcc.Graph(id='map',
-                                   figure=get_map([start_lat],
-                                                  [start_lon],
+                                   figure=get_map([0],
+                                                  [0],
                                                   None,
                                                   None,[]),
                                    style={'height':'47vh'})),
@@ -564,9 +570,8 @@ def layout():
             dcc.Graph(id='slip_score',style={'height':'44vh'}),
             dcc.Slider(id='week-slider',
                        min=0,
-                       max=num_weeks-1,
-                       value=num_weeks-1,
-                       marks=marks,
+                       max=0,
+                       value=0,
                    step=None)
         ],width=4,style={'float': 'left','height':'90vh'}),
         # Hidden div inside the app that stores the intermediate value
