@@ -137,3 +137,9 @@ dmypy.json
 # Cython debug symbols
 cython_debug/
 
+.DS_Store
+dash/.DS_Store
+dash/.mapbox_token
+dash/assets/.DS_Store
+dash/location_data/
+og_data/
