@@ -5,10 +5,15 @@ import matplotlib.pyplot as plt
 from statsmodels.tsa.seasonal import seasonal_decompose
 import argparse
 import csv
+import math
 
 shape_i = 0
 baseline_range = {'start':3, 'end':24}
 crisis_range = {'start':24}
+
+def shortest_distance(x1, y1, a, b, c):
+    d = abs((a * x1 + b * y1 + c)) / (math.sqrt(a * a + b * b))
+    return(d)
 
 def draw_arrow(ax, x1, y1, x2, y2):
     ax.arrow( x1, y1, x2 - x1, y2 - y1,
@@ -62,6 +67,16 @@ parser.add_argument('-i',
 parser.add_argument('-o',
                     dest='outfile',
                     help='Output file name')
+
+parser.add_argument('--shapename',
+                    dest='shapename',
+                    help='Shape to plot')
+
+
+parser.add_argument("--x_min", dest="x_min", type=float)
+parser.add_argument("--x_max", dest="x_max", type=float)
+parser.add_argument("--y_min", dest="y_min", type=float)
+parser.add_argument("--y_max", dest="y_max", type=float)
 
 parser.add_argument("--x_axis",
                     dest="x_axis_i",
@@ -117,19 +132,20 @@ for row in input_file:
         header = row
         continue
 
-    loc.append(row[1:3])
+    if args.shapename is None or row[shape_i] == args.shapename:
+        loc.append(row[1:3])
 
-    b = row[baseline_range['start']:baseline_range['end']]
-    b = [float(x) for x in b]
+        b = row[baseline_range['start']:baseline_range['end']]
+        b = [float(x) for x in b]
 
-    BD.append(np.sqrt(np.mean(b)))
-    #BD.append(np.mean(b))
+        BD.append(np.sqrt(np.mean(b)))
+        #BD.append(np.mean(b))
 
-    c = row[crisis_range['start']:]
-    c = [float(x) for x in c]
+        c = row[crisis_range['start']:]
+        c = [float(x) for x in c]
 
-    B.append([float(x) for x in b])
-    C.append([float(x) for x in c])
+        B.append([float(x) for x in b])
+        C.append([float(x) for x in c])
 
 fig = plt.figure(figsize=(args.width,args.height), dpi=300)
 
@@ -171,13 +187,47 @@ for i in range(len(B)):
 
     #draw_arrow(ax, c_wss[0], c_wss[1], c_wss[1], c_wss[2])
 
+D = []
+for i in range(len(X)):
+    D.append(shortest_distance(X[i], Y[i], 1, -1, 0))
 
-ax.scatter(X,Y,s=BD,alpha=args.alpha)
-ax.set_ylim((-.75,1.75))
-ax.set_xlim((-.75,1.75))
+max_d = max(D)
+sum_sqr = sum([d**2 for d in D])
 
-diag_line, = ax.plot(ax.get_xlim(), ax.get_ylim(), ls="--", lw=0.5, c='red')
+alphas = [ (d/max_d)**2 for d in D ]
+
+rgba_colors = np.zeros((len(Y),4))
+rgba_colors[:,0] = 31.0/255.0
+rgba_colors[:,1] = 119.0/255.0
+rgba_colors[:,2] = 180.0/255.0
+rgba_colors[:, 3] = alphas
+
+#ax.scatter(X,Y,s=BD,linewidths=0.5,color=rgba_colors)#alpha=args.alpha)
+ax.scatter(X,Y,s=BD,linewidths=0.5,color=rgba_colors)#alpha=args.alpha)
+
+if args.y_min and args.y_max:
+    ax.set_ylim((args.y_min,args.y_max))
+if args.x_min and args.x_max:
+    ax.set_xlim((args.x_min,args.x_max))
+
+print(ax.get_ylim(), ax.get_xlim())
+
+x_vals = np.array(ax.get_xlim())
+b=0
+m=1
+y_vals = m * x_vals + b
+ax.plot(x_vals,y_vals, ls="--", lw=0.5, c='red')
+
+ax.text(ax.get_xlim()[1],
+        ax.get_ylim()[0],
+        str(round(sum_sqr,3)),
+        fontsize=6,
+        verticalalignment='bottom',
+        horizontalalignment='right')
+
+
 
 clear_ax(ax, args.x_label, args.y_label)
+ax.ticklabel_format(useOffset=False)
 
 plt.savefig(args.outfile,bbox_inches='tight')

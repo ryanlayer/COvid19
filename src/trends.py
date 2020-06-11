@@ -10,6 +10,7 @@ shape_i = 0
 baseline_range = {'start':3, 'end':24}
 crisis_range = {'start':24}
 
+#{{{
 def clear_ax(ax):
     ax.spines['top'].set_visible(False)
     ax.spines['bottom'].set_visible(False)
@@ -60,9 +61,12 @@ def show_legend(ax, ps):
     #ax.legend(ps, labs, loc=0)
     ax.legend(ps, labs,
               frameon=False,
-              bbox_to_anchor=(0.95,0.7),
-              loc='center left',
-              fontsize=4)
+               loc='lower left',
+               bbox_to_anchor=(-0.01, 0.75),
+               fontsize=4,
+               ncol=3)
+
+
 
 def mark_weeks(ax, header):
 
@@ -83,7 +87,9 @@ def mark_weeks(ax, header):
 
 
         x_i+=1
+#}}}
 
+#{{{
 parser = argparse.ArgumentParser()
 
 parser.add_argument('-i',
@@ -124,7 +130,7 @@ parser.add_argument('--height',
                     help='Plot height (default 5)')
 
 args = parser.parse_args()
-
+#}}}
 
 input_file = csv.reader(open(args.infile), delimiter='\t')
 header = None
@@ -210,13 +216,14 @@ for i in to_plot:
     p1 = ax.plot(range(len(C[i])),
             C[i],
             lw=0.5,
-            label='current')
+            label='Current')
 
     ax.set_ylabel('Density', fontsize=4)
 
     clear_ax(ax)
     shade_weekends(ax, crisis_header)
     mark_weeks(ax, crisis_header)
+    ax.set_xlim((0,len(C[i])))
     #if i == to_plot[0]:
         #show_legend(ax)
 
@@ -229,20 +236,22 @@ for i in to_plot:
     t  = result_mul.trend
 
     ax = fig.add_subplot(inner_grid[1])
-    p2 = ax.plot(range(len(s)), s, lw=0.5, label='season')
+    p2 = ax.plot(range(len(s)), s, lw=0.5, label='Season')
     clear_ax(ax)
     shade_weekends(ax, crisis_header)
     mark_weeks(ax, crisis_header)
+    ax.set_xlim((0,len(C[i])))
     #if i == to_plot[0]:
         #show_legend(ax)
 
     ax = fig.add_subplot(inner_grid[2])
-    p3 = ax.plot(range(len(t)), t, lw=0.5, c='black', label='trend')
+    p3 = ax.plot(range(len(t)), t, lw=0.5, c='black', label='Trend')
     clear_ax(ax)
     clear_ax(ax)
     shade_weekends(ax, crisis_header)
     mark_weeks(ax, crisis_header)
     label_days(ax, crisis_header)
+    ax.set_xlim((0,len(C[i])))
 
     if i == to_plot[0]:
         ps = p1 + p2 + p3

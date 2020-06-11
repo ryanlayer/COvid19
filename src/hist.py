@@ -200,6 +200,7 @@ for y in Y:
 
     median = np.median(y)
     ax.axvline(x=median, lw=1.0, ls='--', c = 'black')
+    #ax.axvline(x=0, lw=1.0, ls='-', c = 'black')
     ax.text(median,
             ax.get_ylim()[1],
             str(round(median,3)),

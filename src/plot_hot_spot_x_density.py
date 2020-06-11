@@ -7,6 +7,7 @@ import argparse
 import csv
 import collections
 from sklearn.linear_model import LinearRegression
+import fb
 
 Window = collections.namedtuple('Window', 'index dayofweek')
 
@@ -73,6 +74,13 @@ parser.add_argument('-w',
                     dest='window',
                     default=3,
                     help='Window size in days')
+
+parser.add_argument('--markersize',
+                    dest='markersize',
+                    type=float,
+                    default=5.0,
+                    help='Marer size (default 5.0)')
+
 
 parser.add_argument('--width',
                     dest='width',
@@ -212,27 +220,48 @@ for c in C:
 
     c_i+=1
 
-ax.scatter(X,Y,alpha=args.alpha)
+#alphas = [abs(y) for y in Y]
+#max_a = max(alphas)
+#
+#if args.y_min and args.y_max:
+#    max_y = max(abs(args.y_min),abs(args.y_max))
+#    alphas = [ (a/max_y)**1.5 for a in alphas ]
+#else:
+#    alphas = [ (a/max_a)**1.5 for a in alphas ]
+#
+#rgba_colors = np.zeros((len(y),4))
+#rgba_colors[:,0] = 31.0/255.0
+#rgba_colors[:,1] = 119.0/255.0
+#rgba_colors[:,2] = 180.0/255.0
+#print(min(alphas), max(alphas))
+#rgba_colors[:, 3] = alphas
+#ax.scatter(X,Y,s=args.markersize,color=rgba_colors)
+#ax.set_xscale('log')
+#
+#mean = np.mean(Y)
+#
+#ax.axhline(y=mean, ls='-', lw=0.5, c='red')
+#
+#ax.text(ax.get_xlim()[1],
+#        mean,
+#        str(round(mean,2)),
+#        fontsize=8,
+#        verticalalignment='top',
+#        horizontalalignment='right')
+#
+#ax.axhline(y=0, lw=0.25, c='black')
+#
+#ax.set_ylabel(args.y_label, fontsize=7)
+#ax.set_xlabel(args.x_label, fontsize=7)
+#
+#if args.y_min and args.y_max:
+#    ax.set_ylim( ( args.y_min ,args.y_max) )
 
-mean = np.mean(Y)
-
-ax.axhline(y=mean, ls='-', lw=0.5, c='red')
-
-ax.text(ax.get_xlim()[1],
-        mean,
-        str(round(mean,2)),
-        fontsize=8,
-        verticalalignment='top',
-        horizontalalignment='right')
-
-ax.axhline(y=0, lw=0.25, c='black')
-
-ax.set_ylabel(args.y_label, fontsize=7)
-ax.set_xlabel(args.x_label, fontsize=7)
-
-if args.y_min and args.y_max:
-    ax.set_ylim( ( args.y_min ,args.y_max) )
+fb.scatter(ax, X, Y, 1.5, args.markersize, args.y_min, args.y_max)
 
 clear_ax(ax)
+ax.set_ylabel(args.y_label, fontsize=7)
+ax.set_xlabel(args.x_label, fontsize=7)
+c
 
 plt.savefig(args.outfile,bbox_inches='tight')

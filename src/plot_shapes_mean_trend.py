@@ -131,8 +131,11 @@ parser.add_argument('-n',
                     default=5,
                     help='Label the top n cities (default 5)')
 
-
-
+parser.add_argument('--dist',
+                    dest='dist',
+                    type=float,
+                    default=1,
+                    help='Distance between city lables')
 
 args = parser.parse_args()
 
@@ -189,6 +192,7 @@ ax.axhline(y=0, c='black', lw=0.5)
 T = []
 B_sum = []
 for shape in shapenames:
+    print(shape)
     if shape in B:
 
         B_s = B[shape]
@@ -215,7 +219,8 @@ for shape in shapenames:
 
         T.append(T_s_mean)
 
-B_sum_norm = (B_sum - np.min(B_sum))/ np.max(B_sum)
+print(B_sum)
+B_sum_norm = 0.25 + ((B_sum - np.min(B_sum))/ np.max(B_sum))
 top_cities = sorted(B_sum_norm)[-1*args.n:]
 i = 0
 
@@ -242,9 +247,10 @@ names = sorted(names, key = lambda x: x[2], reverse=True)
 
 l = len(names)
 i = 0
+dist = args.dist
 while i+1 < l:
     d_next = names[i][2]-names[i+1][2]
-    if d_next < 1:
+    if d_next < dist:
         names[i][0] += names[i+1][0]
         del names[i+1]
         l -= 1
@@ -279,5 +285,6 @@ clear_ax(ax)
 shade_weekends(ax, crisis_header)
 mark_weeks(ax, crisis_header)
 label_days(ax, crisis_header)
+ax.set_xlim((0,len(T[0])))
 
 plt.savefig(args.outfile,bbox_inches='tight')
