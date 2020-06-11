@@ -1,0 +1,5 @@
+url	ss	ws	trend	unique_ss	unique_ws
+arapahoe	location_data/Arapahoe_slip.csv	location_data/Arapahoe_ws.csv	location_data/Arapahoe_trend.csv	location_data/unique_Arapahoe_slip.csv	location_data/unique_Arapahoe_ws.csv
+slc	location_data/SLC_slip.csv	location_data/SLC_ws.csv	location_data/SLC_trend.csv	location_data/unique_SLC_slip.csv	location_data/unique_SLC_ws.csv
+boulder	location_data/boulder_slip.csv	location_data/boulder_ws.csv	location_data/boulder_trend.csv	location_data/unique_boulder_slip.csv	location_data/unique_boulder_ws.csv
+denver	location_data/denver_ss.csv	location_data/denver_ws.csv	location_data/denver_trend.csv	location_data/unique_denver_ss.csv	location_data/unique_denver_ws.csv
