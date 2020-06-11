@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from statsmodels.tsa.seasonal import seasonal_decompose
 import argparse
 import csv
+from operator import add
 
 shape_i = 0
 baseline_range = {'start':3, 'end':24}
@@ -23,7 +24,7 @@ def clear_ax(ax):
 
 def shade_weekends(ax, header):
     x_i = 0
-    for field in header[baseline_range['start']:]:
+    for field in header:
         timepoint = field.split(' ')
         day = timepoint[1]
         time = timepoint[-1]
@@ -45,7 +46,7 @@ def label_days(ax, header):
     x_i = 0
     ticks = []
     labels = []
-    for field in header[baseline_range['start']:]:
+    for field in header:
         timepoint = field.split(' ')
         if timepoint[-1] == '1000':
             ticks.append(x_i)
@@ -69,7 +70,7 @@ def mark_weeks(ax, header):
 
     x_i = 0
 
-    for field in header[baseline_range['start']:]:
+    for field in header:
         timepoint = field.split(' ')
 
         if timepoint[0] == 'crisis':
@@ -116,17 +117,38 @@ parser.add_argument('--height',
                     default=5,
                     help='Plot height (default 5)')
 
+parser.add_argument('--color',
+                    dest='color',
+                    default='tab:blue',
+                    help='Line color (default tab:blue)')
+
+parser.add_argument('--start_date',
+                    dest='start_date',
+                    required=True,
+                    help='Start of date range')
+
+parser.add_argument('--end_date',
+                    dest='end_date',
+                    required=True,
+                    help='End of date range')
+
+
+
 args = parser.parse_args()
 
 
 input_file = csv.reader(open(args.infile), delimiter='\t')
 header = None
+crisis_header = None
+baseline_header = None
 B = []
 C = []
 loc = []
 for row in input_file:
     if header is None:
         header = row
+        baseline_header = row[baseline_range['start']:baseline_range['end']]
+        crisis_header = row[crisis_range['start']:]
         continue
 
     if args.shapename and row[shape_i] == args.shapename:
@@ -140,6 +162,7 @@ for row in input_file:
         C.append([float(x) for x in c])
 
 to_plot = [0]
+
 if args.n:
     if args.n == '-1':
         to_plot = range(len(B))
@@ -149,50 +172,49 @@ if args.n:
 
 fig = plt.figure(figsize=(args.width,args.height), dpi=300)
 
-rows=len(to_plot)
+rows=1
 cols=1
 
 outer_grid = gridspec.GridSpec(rows, cols, wspace=0.0, hspace=0.1)
 
-plot_i = 0
+P = None
 for i in to_plot:
+    if not P:
+        P = [b for b in B[i]]
+    else:
+        P = list( map(add, P, B[i]) )
 
 
-    inner_grid = gridspec.GridSpecFromSubplotSpec(\
-            1,
-            1,
-            subplot_spec=outer_grid[plot_i],
-            wspace=0.0,
-            hspace=0.0)
 
-    ax = fig.add_subplot(inner_grid[0])
+inner_grid = gridspec.GridSpecFromSubplotSpec(\
+        1,
+        1,
+        subplot_spec=outer_grid[0],
+        wspace=0.0,
+        hspace=0.0)
 
-    ax.plot(range(len(B[i])),
-            B[i],
-            lw=0.5,
-            label='Baseline')
+ax = fig.add_subplot(inner_grid[0])
 
-    ax.plot(range(len(B[i]),
-            len(B[i]) + len(C[i])),
-            C[i],
-            lw=0.5,
-            label='Current')
+#ax.plot(range(len(B[i])),
+ax.plot(range(len(P)),
+        P,
+        lw=0.5,
+        c=args.color,
+        label='Baseline')
 
-    ax.set_ylabel('Density', fontsize=4)
+#    ax.plot(range(len(B[i]),
+#            len(B[i]) + len(C[i])),
+#            C[i],
+#            lw=0.5,
+#            label='Current')
 
-    clear_ax(ax)
-    shade_weekends(ax, header)
+ax.set_ylabel('Density', fontsize=4)
 
-    mark_weeks(ax, header)
+clear_ax(ax)
+shade_weekends(ax, baseline_header)
+mark_weeks(ax, baseline_header)
+ax.set_xlim((0,len(P)))
+label_days(ax, baseline_header)
 
-    ax.set_xlim((0,len(B[i]) + len(C[i])))
-
-    if i == to_plot[0]:
-        show_legend(ax)
-
-    if i == to_plot[-1]:
-        label_days(ax, header)
-
-    plot_i += 1
 
 plt.savefig(args.outfile,bbox_inches='tight')

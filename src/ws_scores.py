@@ -10,6 +10,7 @@ shape_i = 0
 baseline_range = {'start':3, 'end':24}
 crisis_range = {'start':24}
 
+#{{{
 def get_ws(scores, header):
     wd = []
     we = []
@@ -96,9 +97,10 @@ def label_days(ax, header):
 
 def show_legend(ax):
     ax.legend(frameon=False,
-              bbox_to_anchor=(0.95,0.7),
-              loc='center left',
-              fontsize=4)
+              loc='lower left',
+              bbox_to_anchor=(0, 1),
+              fontsize=4,
+              ncol=2)
 
 def mark_weeks(ax, header):
 
@@ -119,7 +121,9 @@ def mark_weeks(ax, header):
 
 
         x_i+=1
+#}}}
 
+#{{{
 parser = argparse.ArgumentParser()
 
 parser.add_argument('-i',
@@ -160,7 +164,7 @@ parser.add_argument('--height',
                     help='Plot height (default 5)')
 
 args = parser.parse_args()
-
+#}}}
 
 input_file = csv.reader(open(args.infile), delimiter='\t')
 header = None
@@ -178,7 +182,6 @@ for row in input_file:
 
         loc.append(row[1:3])
 
-         
         b = row[baseline_range['start']:baseline_range['end']]
         b = [float(x) for x in b]
 
@@ -191,12 +194,14 @@ for row in input_file:
         c = [float(x) for x in c]
 
         week_i = 0
+        s = 0
         for j in range(crisis_range['start'],len(header),21):
             c_header = header[j:j+21]
             if len(c_header) < 21:
                 continue
             c_wd_u, c_we_u, c_ws = get_ws(c[week_i*21:week_i*21+21], c_header)
             O.append(c_ws)
+            s += abs(c_ws)
             week_i += 1
 
         if not out_header:
@@ -206,8 +211,8 @@ for row in input_file:
                  'lat',
                  'baseline_density',
                  'baseline_ws']
-            for i in range(1,week_i+1):
-                h.append('week_' + str(i) + '_ws')
+            for j in range(1,week_i+1):
+                h.append('week_' + str(j) + '_ws')
             print(args.delim.join(h))
             out_header = True
 
@@ -236,7 +241,7 @@ fig = plt.figure(figsize=(args.width,args.height), dpi=300)
 rows=len(to_plot)
 cols=1
 
-outer_grid = gridspec.GridSpec(rows, cols, wspace=0.0, hspace=0.1)
+outer_grid = gridspec.GridSpec(rows, cols, wspace=0.0, hspace=0.0)
 
 plot_i = 0
 for i in to_plot:
@@ -252,7 +257,7 @@ for i in to_plot:
     ax.plot(range(len(B[i])),
             B[i],
             lw=0.5,
-            label='baseline')
+            label='Baseline')
 
     b_header = header[baseline_range['start']:baseline_range['end']]
     b_wd_u, b_we_u, b_ws = get_ws(B[i], b_header)
@@ -262,7 +267,7 @@ for i in to_plot:
     ax.plot(range(len(B[i]), len(B[i]) + len(C[i])),
             C[i],
             lw=0.5,
-            label='current')
+            label='Current')
 
     week_i = 0
     for j in range(crisis_range['start'],len(header),21):
@@ -278,9 +283,9 @@ for i in to_plot:
 
     clear_ax(ax)
     shade_weekends(ax, header)
-
-
     mark_weeks(ax, header)
+
+    ax.set_xlim((0,len(B[i]) + len(C[i])))
 
     if i == to_plot[0]:
         show_legend(ax)
@@ -289,5 +294,7 @@ for i in to_plot:
         label_days(ax, header)
 
     plot_i += 1
+
+
 
 plt.savefig(args.outfile,bbox_inches='tight')

@@ -1,10 +1,13 @@
 import  sys
 import numpy as np
+import pandas as pd
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 from statsmodels.tsa.seasonal import seasonal_decompose
 import argparse
 import csv
+from fbprophet import Prophet
+import plotly
 
 shape_i = 0
 baseline_range = {'start':3, 'end':24}
@@ -133,6 +136,7 @@ input_file = csv.reader(open(args.infile), delimiter='\t')
 header = None
 crisis_header = None
 baseline_header = None
+crisis_days = []
 B = []
 C = []
 for row in input_file:
@@ -140,6 +144,12 @@ for row in input_file:
         header = row
         baseline_header = row[baseline_range['start']:baseline_range['end']]
         crisis_header = row[crisis_range['start']:]
+
+        for h in crisis_header:
+            state,day,date,time = h.split()
+            time = ':'.join([ time[:2], time[2:], '00'])
+            crisis_days.append( date + ' ' + time )
+
         continue
 
     if args.shapename is None or row[shape_i] == args.shapename:
@@ -186,6 +196,22 @@ for i in range(len(C)):
     t  = np.array(result_mul.trend)
     t = t - t[0]
 
+
+#    df = pd.DataFrame(data={'ds':crisis_days, 'y':C[i]})
+#    m = Prophet()
+#    m.add_seasonality(name='hourly',
+#                      period=7,
+#                      fourier_order=10)
+#
+#    m.fit(df)
+#    future = m.make_future_dataframe(periods=0)
+#    forecast = m.predict(future)
+#    fb_trend = forecast.trend.tolist()
+#    fb_weekly = forecast.weekly.tolist()
+#
+#    t = np.array(fb_trend)
+#    t = t - t[0]
+
     T.append(t)
 
     c = 'blue'
@@ -200,6 +226,7 @@ for i in range(len(C)):
             lw=baseline_mean_norm[i],
             alpha=alpha,
             c=c)
+    ax.set_xlim((0,len(t)))
 
 T_mean = np.average(T, axis=0, weights=baseline_mean_norm)
 
@@ -211,7 +238,7 @@ ax.plot(range(len(T_mean)),
         lw=1,
         c='black')
 
-ax.set_ylabel('Change in density', fontsize=6)
+ax.set_ylabel('Density trend', fontsize=4)
 
 if args.title:
     ax.set_title(args.title)

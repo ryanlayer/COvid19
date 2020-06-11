@@ -90,9 +90,10 @@ def label_days(ax, header):
 
 def show_legend(fig):
     fig.legend(frameon=False,
-               loc='upper right',
+               loc='lower left',
+               bbox_to_anchor=(0.075, 1.55),
                fontsize=4,
-               ncol=2)
+               ncol=4)
 
 
 def mark_weeks(ax, header):
@@ -359,7 +360,7 @@ for i in to_plot:
 
     ax2.scatter(hs_x,hs_y,2,c='blue', label='Hot-spot score')
     ax2.set_ylim([args.ymin,args.ymax])
-    ax2.set_ylabel('Hot-spot score', fontsize=4)
+    ax2.set_ylabel('Hot-spot', fontsize=4)
 
     ax.set_ylabel('Density', fontsize=4)
 
@@ -368,6 +369,8 @@ for i in to_plot:
     shade_weekends(ax, crisis_header)
 
     mark_weeks(ax, crisis_header)
+
+    ax.set_xlim((0,len(C[i])))
 
     if i == to_plot[0]:
         show_legend(fig)

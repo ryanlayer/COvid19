@@ -2,9 +2,11 @@ import  sys
 import numpy as np
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
+import matplotlib as mpl
 from statsmodels.tsa.seasonal import seasonal_decompose
 import argparse
 import csv
+import fb
 
 shape_i = 0
 baseline_range = {'start':3, 'end':24}
@@ -146,6 +148,12 @@ parser.add_argument('--height',
                     default=5,
                     help='Plot height (default 5)')
 
+parser.add_argument('--markersize',
+                    dest='markersize',
+                    type=float,
+                    default=5.0,
+                    help='Marer size (default 5.0)')
+
 parser.add_argument('--alpha',
                     dest='alpha',
                     type=float,
@@ -236,31 +244,61 @@ ax = fig.add_subplot(inner_grid[0])
 week1,week2 = [int(i) for i in args.weeks.split(',')]
 scores = [np.log2(m[week2]/m[week1]) for m in M]
 
-ax.scatter(S,scores,alpha=args.alpha)
-
-mean = np.mean(scores)
-ax.axhline(y=mean, ls='-', lw=0.5, c='red')
-ax.text(ax.get_xlim()[1],
-        mean,
-        str(round(mean,2)),
-        fontsize=8,
-        verticalalignment='top',
-        horizontalalignment='right')
-
-#ax.axhline(y=np.log2(1.01), ls='--', lw=0.5, c='black')
-#ax.axhline(y=np.log2(0.99), ls='--', lw=0.5, c='black')
+#alphas = [abs(score) for score in scores]
+#max_a = max(alphas)
 #
-#ax.axhline(y=np.log2(1.10), ls='--', lw=0.5, c='black')
-#ax.axhline(y=np.log2(0.90), ls='--', lw=0.5, c='black')
+#if args.y_min and args.y_max:
+#    max_y = max(abs(args.y_min),abs(args.y_max))
+#    alphas = [ (a/max_y)**1.0 for a in alphas ]
+#else:
+#    alphas = [ (a/max_a)**1.0 for a in alphas ]
+#
+#print(min(scores),max(scores))
+#print(min(alphas),max(alphas))
+#
+#rgba_colors = np.zeros((len(scores),4))
+#rgba_colors[:,0] = 31.0/255.0
+#rgba_colors[:,1] = 119.0/255.0
+#rgba_colors[:,2] = 180.0/255.0
+#rgba_colors[:, 3] = alphas
+#
+#ax.scatter(S,
+#           scores,
+#           s=args.markersize,
+#           linewidths=0.5,
+#           color=rgba_colors)
+#ax.set_xscale('log')
+#
+#
+#weighted_sum = fb.weighted_sum(scores, S)
+#ax.axhline(y=weighted_sum,ls='-', lw=0.5, c='red')
+#ax.text(ax.get_xlim()[1],
+#        weighted_sum,
+#        str(round(weighted_sum,3)),
+#        fontsize=8,
+#        verticalalignment='top',
+#        horizontalalignment='right')
+#
+#
+#ax.axhline(y=0, lw=0.25, c='black')
+#
+#ax.set_ylabel(args.y_label, fontsize=7)
+#ax.set_xlabel(args.x_label, fontsize=7)
+#
+#if args.y_min and args.y_max:
+#    ax.set_ylim( ( args.y_min ,args.y_max) )
+#
 
-ax.axhline(y=0, lw=0.25, c='black')
+fb.scatter(ax, S, scores, 1.5, args.markersize, args.y_min, args.y_max)
 
 ax.set_ylabel(args.y_label, fontsize=7)
 ax.set_xlabel(args.x_label, fontsize=7)
-
-if args.y_min and args.y_max:
-    ax.set_ylim( ( args.y_min ,args.y_max) )
-
 clear_ax(ax)
+#ax.ticklabel_format(useOffset=False)
+#print(ax.get_xaxis().get_major_formatter())
+#formatter = mpl.ticker.LogFormatterExponent()
+#ax.xaxis.set_major_formatter(formatter)
+#ax.get_xaxis().set_major_formatter(mpl.ticker.LogFormatterMathtext)
+#mpl.ticker.FormatStrFormatter('%.2f%%')
 
 plt.savefig(args.outfile,bbox_inches='tight')

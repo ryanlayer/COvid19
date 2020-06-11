@@ -1,10 +1,55 @@
 import geopandas as gpd
+import numpy as np
 import pandas as pd
 from shapely.geometry import Point
 from geopandas.tools import sjoin
 import sqlite3
 #from datetime import datetime, timezone
 import datetime
+
+def weighted_sum(vals, weights):
+    r = 0.0
+    for i in range(len(vals)):
+        r += vals[i] * weights[i]
+    return r/sum(weights)
+
+def scatter(ax, X, Y, exp, markersize, y_min, y_max):
+    alphas = [abs(y) for y in Y]
+    max_a = max(alphas)
+
+    if y_min and y_max:
+        max_y = max(abs(y_min),abs(y_max))
+        alphas = [ (a/max_y)**exp for a in alphas ]
+    else:
+        alphas = [ (a/max_a)**exp for a in alphas ]
+
+    rgba_colors = np.zeros((len(Y),4))
+    rgba_colors[:,0] = 31.0/255.0
+    rgba_colors[:,1] = 119.0/255.0
+    rgba_colors[:,2] = 180.0/255.0
+    rgba_colors[:, 3] = alphas
+
+    ax.scatter(X,
+               Y,
+               s=markersize,
+               linewidths=0.5,
+               color=rgba_colors)
+    #ax.set_xscale('log')
+
+    ws = weighted_sum(Y, X)
+    ax.axhline(y=ws,ls='-', lw=0.5, c='red')
+    ax.text(ax.get_xlim()[0],
+            ws,
+            str(round(ws,3)),
+            fontsize=6,
+            verticalalignment='top',
+            horizontalalignment='left')
+
+    ax.axhline(y=0, lw=0.25, c='black')
+
+
+    if y_min and y_max:
+        ax.set_ylim( ( y_min , y_max) )
 
 
 def day_of_week(date):
@@ -67,6 +112,7 @@ def get_db_fields(db_path, fields, local_tz=True):
     D = {}
     dates = []
 
+    #for row in c.execute('SELECT * FROM pop_tile'):
     for row in c.execute('SELECT * FROM pop_tile WHERE n_crisis != "\\N"'):
         lat = row['lat']
         lon = row['lon']

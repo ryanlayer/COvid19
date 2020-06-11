@@ -1,40 +1,17 @@
 import  sys
 import numpy as np
+import pandas as pd
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 from statsmodels.tsa.seasonal import seasonal_decompose
 import argparse
 import csv
+from fbprophet import Prophet
+import plotly
 
 shape_i = 0
 baseline_range = {'start':3, 'end':24}
 crisis_range = {'start':24}
-
-#{{{
-def get_week_means(scores):
-    week_i = 0
-    week_means = []
-    W = []
-    for j in range(0,len(scores),21):
-        c_week = scores[j:j+21]
-        if len(c_week) < 21:
-            continue
-        W.append( np.mean(c_week) )
-    return W
-
-def plot_ss(ax, header, mean, start_x):
-
-    curr_x = start_x
-
-    for i in range(len(header)):
-        c='black'
-        point1 = [curr_x - 0.5, mean]
-        point2 = [curr_x + 0.5, mean]
-        x_values = [point1[0], point2[0]]
-        y_values = [point1[1], point2[1]]
-        ax.plot(x_values, y_values, c=c, lw=0.5)
-        curr_x+=1
-    return curr_x
 
 def clear_ax(ax):
     ax.spines['top'].set_visible(False)
@@ -81,12 +58,14 @@ def label_days(ax, header):
     ax.set_xticks(ticks)
     ax.set_xticklabels(labels, fontsize=4)
 
-def show_legend(ax):
-    ax.legend(frameon=False,
-              loc='lower left',
-              bbox_to_anchor=(-0.01, 0.75),
-              fontsize=4,
-              ncol=2)
+def show_legend(ax, ps):
+    labs = [l.get_label() for l in ps]
+    #ax.legend(ps, labs, loc=0)
+    ax.legend(ps, labs,
+              frameon=False,
+              bbox_to_anchor=(0.95,0.7),
+              loc='center left',
+              fontsize=4)
 
 def mark_weeks(ax, header):
 
@@ -107,9 +86,7 @@ def mark_weeks(ax, header):
 
 
         x_i+=1
-#}}}
 
-#{{{
 parser = argparse.ArgumentParser()
 
 parser.add_argument('-i',
@@ -130,13 +107,6 @@ parser.add_argument('-n',
                     type=str,
                     help='CSV of records to plot')
 
-parser.add_argument('--delim',
-                    dest='delim',
-                    type=str,
-                    default='\t',
-                    help='Output delimiter (default tab)')
-
-
 parser.add_argument('--width',
                     dest='width',
                     type=float,
@@ -150,59 +120,45 @@ parser.add_argument('--height',
                     help='Plot height (default 5)')
 
 args = parser.parse_args()
-#}}}
+
 
 input_file = csv.reader(open(args.infile), delimiter='\t')
 header = None
 crisis_header = None
+crisis_days = []
 B = []
 C = []
 M = []
-row_i = 1
-out_header = False
+row_i = 0
 for row in input_file:
     if header is None:
         header = row
         crisis_header = row[crisis_range['start']:]
+        for h in crisis_header:
+            state,day,date,time = h.split()
+            time = ':'.join([ time[:2], time[2:], '00'])
+            crisis_days.append( date + ' ' + time )
         continue
 
     if args.shapename is None or row[shape_i] == args.shapename:
 
-        b = row[baseline_range['start']:baseline_range['end']]
-        b = [float(x) for x in b]
-
-        baseline_mean = get_week_means(b)
+#        b = row[baseline_range['start']:baseline_range['end']]
+#        b = [float(x) for x in b]
 
         c = row[crisis_range['start']:]
         c = [float(x) for x in c]
+        C.append(c)
 
-        crisis_week_means = get_week_means(c)
-
-        means = baseline_mean + crisis_week_means
-
-        M.append(means)
-
-        o = [row_i] + row[0:3] + [np.mean(b)]
-        for i in range(1,len(means)):
-            o.append(np.log2(means[i]/means[i-1]))
-
-        if not out_header:
-            h = ['index',
-                 'name',
-                 'lon',
-                 'lat',
-                 'baseline_density']
-            for i in range(1,len(means)):
-                h.append('week_' + str(i) + '_ss')
-            print(args.delim.join(h))
-            out_header = True
-
-        print(args.delim.join([str(x) for x in o]))
-
-        B.append([float(x) for x in b])
-        C.append([float(x) for x in c])
-
-        row_i += 1
+#        result_mul = seasonal_decompose(c,
+#                                        period=21,
+#                                        model='multiplicative',
+#                                        extrapolate_trend='freq')
+#        s  = result_mul.seasonal
+#        t  = result_mul.trend
+#
+#        O = [row_i] + row[0:3] + [t[0]-t[-1], max(t)-min(t)]
+#        print('\t'.join([str(o) for o in O]))
+#        row_i += 1
 
 if args.outfile is None:
     sys.exit(0)
@@ -225,41 +181,125 @@ outer_grid = gridspec.GridSpec(rows, cols, wspace=0.0, hspace=0.1)
 plot_i = 0
 for i in to_plot:
     inner_grid = gridspec.GridSpecFromSubplotSpec(\
-            1,
+            7,
             1,
             subplot_spec=outer_grid[plot_i],
+            #height_ratios = [1,1,1,1],
             wspace=0.0,
-            hspace=0.0)
+            hspace=0.1)
 
     ax = fig.add_subplot(inner_grid[0])
+    top_ax = ax
 
     ax.plot([],[])
-    ax.plot(range(len(C[i])),
+    p1 = ax.plot(range(len(C[i])),
             C[i],
             lw=0.5,
-            label='Current')
-
-    week_i = 0
-    curr_x = 0
-    for j in range(0,len(crisis_header),21):
-        c_header = crisis_header[j:j+21]
-        c_vals = C[i][j:j+21]
-        if len(c_header) < 21:
-            continue
-        curr_x = plot_ss(ax, c_header, np.mean(c_vals),curr_x)
-        week_i += 1
+            label='current')
 
     ax.set_ylabel('Density', fontsize=4)
-
     clear_ax(ax)
     shade_weekends(ax, crisis_header)
-    ax.set_xlim((0,len(C[i])))
-
-
     mark_weeks(ax, crisis_header)
 
+  
+    result_mul = seasonal_decompose(C[i],
+                                     period=21,
+                                     model='multiplicative',
+                                     extrapolate_trend='freq')
+    s  = result_mul.seasonal
+    t  = result_mul.trend
+
+    ax = fig.add_subplot(inner_grid[1])
+    p2 = ax.plot(range(len(s)), s, lw=0.5, label='season')
+    clear_ax(ax)
+    shade_weekends(ax, crisis_header)
+    mark_weeks(ax, crisis_header)
+
+    ax = fig.add_subplot(inner_grid[2])
+    p3 = ax.plot(range(len(t)), t, lw=0.5, c='black', label='trend')
+    clear_ax(ax)
+    shade_weekends(ax, crisis_header)
+    mark_weeks(ax, crisis_header)
+    label_days(ax, crisis_header)
+
+######################
+    df = pd.DataFrame(data={'ds':crisis_days, 'y':C[i]})
+    m = Prophet()
+
+    m.fit(df)
+    future = m.make_future_dataframe(periods=0)
+    forecast = m.predict(future)
+    fb_trend = forecast.trend.tolist()
+    fb_weekly = forecast.weekly.tolist()
+
+
+    ax = fig.add_subplot(inner_grid[3])
+    p4 = ax.plot(range(len(fb_weekly)),
+                 fb_weekly,
+                 lw=0.5,
+                 c='red',
+                 label='fb trend')
+    clear_ax(ax)
+    shade_weekends(ax, crisis_header)
+    mark_weeks(ax, crisis_header)
+    label_days(ax, crisis_header)
+
+    ax = fig.add_subplot(inner_grid[4])
+    p4 = ax.plot(range(len(fb_trend)),
+                 fb_trend,
+                 lw=0.5,
+                 c='green',
+                 label='fb trend')
+    clear_ax(ax)
+    shade_weekends(ax, crisis_header)
+    mark_weeks(ax, crisis_header)
+    label_days(ax, crisis_header)
+#######################
+
+    m = Prophet()
+    m.add_seasonality(name='hourly',
+                      period=7,
+                      fourier_order=20)
+
+    m.fit(df)
+    future = m.make_future_dataframe(periods=0)
+    forecast = m.predict(future)
+    fb_trend = forecast.trend.tolist()
+    fb_weekly = forecast.weekly.tolist()
+
+
+    ax = fig.add_subplot(inner_grid[5])
+    p4 = ax.plot(range(len(fb_weekly)),
+                 fb_weekly,
+                 lw=0.5,
+                 c='red',
+                 label='fb trend')
+    clear_ax(ax)
+    shade_weekends(ax, crisis_header)
+    mark_weeks(ax, crisis_header)
+    label_days(ax, crisis_header)
+
+    ax = fig.add_subplot(inner_grid[6])
+    p4 = ax.plot(range(len(fb_trend)),
+                 fb_trend,
+                 lw=0.5,
+                 c='green',
+                 label='fb trend')
+    clear_ax(ax)
+    shade_weekends(ax, crisis_header)
+    mark_weeks(ax, crisis_header)
+    label_days(ax, crisis_header)
+
+
+
+
+
+
     if i == to_plot[0]:
-        show_legend(ax)
+        ps = p1 + p2 + p3
+        show_legend(top_ax, ps)
+
 
     if i == to_plot[-1]:
         label_days(ax, crisis_header)
