@@ -1,0 +1,84 @@
+{
+    
+    "Boulder": 
+        {
+            "sit_rep_name" : "Boulder",
+            "county_name" : "Boulder",
+            "city_name" : "Boulder",
+            "db" : "/Users/DBurke/Documents/Layerlab/COvid19/dbs/boulder.db",
+            "cities" : "Boulder,Broomfield,Erie,Firestone,Gunbarrel,Lafayette,Longmont,Louisville,Superior,Westminster",
+            "county_shapes":"/Users/DBurke/Documents/Layerlab/COvid19/facebook/shapefiles/co_counties",
+            "county_shapes_name":"NAME",
+            "city_shapes" : "/Users/Dburke/Documents/Layerlab/COvid19/facebook/shapefiles/Colorado_City_Boundaries/",
+            "city_shapes_name" : "NAME10",
+
+            "url":"https://www.facebook.com/geoinsights-portal/downloads/?id=3072444842777714",
+            "repo":"/Users/DBurke/Documents/Layerlab/COvid19/pop_tiles/boulder_pop_tiles/orig/",
+            "db":"/Users/DBurke/Documents/Layerlab/COvid19/dbs/boulder.db"
+
+        },
+    "Denver":{
+            "sit_rep_name" : "Denver",
+            "county_name" : "Denver",
+            "city_name" : "Denver",
+            "db" : "/Users/DBurke/Documents/Layerlab/COvid19/dbs/denver.db",
+            "cities" : "Denver",
+            "county_shapes":"/Users/DBurke/Documents/Layerlab/COvid19/facebook/shapefiles/co_counties",
+            "county_shapes_name":"NAME",
+            "city_shapes" : "/Users/DBurke/Documents/Layerlab/COvid19/facebook/shapefiles/Colorado_City_Boundaries/",
+            "city_shapes_name" : "NAME10",
+
+            "url":"https://www.facebook.com/geoinsights-portal/downloads/?id=646767436113235",
+            "repo":"/Users/DBurke/Documents/Layerlab/COvid19/pop_tiles/denver_pop_tiles/orig/",
+            "db":"/Users/DBurke/Documents/Layerlab/COvid19/dbs/denver.db"
+
+        },
+    "Arapahoe":{
+            "sit_rep_name" : "Arapahoe",
+            "county_name" : "Arapahoe",
+            "city_name" : "Arapahoe",
+            "db" : "/Users/DBurke/Documents/Layerlab/COvid19/dbs/colorado.db",
+            "cities" : "Aurora,Bennett,Bow Mar,Centennial,Cherry Hills Village,Columbine Valley,Deer Trail,Englewood,Foxfield,Glendale,Greenwood Village,Littleton,Sheridan",
+            "county_shapes" :"/Users/DBurke/Documents/Layerlab/COvid19/facebook/shapefiles/co_counties",
+            "county_shapes_name" :"NAME",
+            "city_shapes" : "/Users/DBurke/Documents/Layerlab/COvid19/facebook/shapefiles/Colorado_City_Boundaries/",
+            "city_shapes_name" : "NAME10", 
+
+            "url":"https://www.facebook.com/geoinsights-portal/downloads/?id=2818080764946565",
+            "repo":"/Users/DBurke/Documents/Layerlab/COvid19/pop_tiles/colorado_pop_tiles/orig/",
+            "db":"/Users/DBurke/Documents/Layerlab/COvid19/dbs/colorado.db"
+
+
+        },
+    "ArapahoeDM":{
+            "sit_rep_name" : "ArapahoeDM",
+            "county_name" : "Arapahoe",
+            "city_name" : "Arapahoe",
+            "db" : "/Users/DBurke/Documents/Layerlab/COvid19/dbs/denver.db",
+            "cities" : "Aurora,Bennett,Bow Mar,Centennial,Cherry Hills Village,Columbine Valley,Deer Trail,Englewood,Foxfield,Glendale,Greenwood Village,Littleton,Sheridan",
+            "county_shapes" :"/Users/DBurke/Documents/Layerlab/COvid19/facebook/shapefiles/co_counties",
+            "county_shapes_name" :"NAME",
+            "city_shapes" : "/Users/DBurke/Documents/Layerlab/COvid19/facebook/shapefiles/Colorado_City_Boundaries/",
+            "city_shapes_name" : "NAME10",
+
+            "url":"https://www.facebook.com/geoinsights-portal/downloads/?id=646767436113235",
+            "repo":"/Users/DBurke/Documents/Layerlab/COvid19/pop_tiles/denver_pop_tiles/orig/",
+            "db":"/Users/DBurke/Documents/Layerlab/COvid19/dbs/denver.db"
+        },
+    "SaltLake":{
+            "sit_rep_name" : "SaltLake",
+            "county_name" : "Salt Lake",
+            "city_name" : "Salt Lake",
+            "db" : "/Users/DBurke/Documents/Layerlab/COvid19/dbs/utah.db",
+            "cities" : "Bluffdale,Cottonwood Heights,Draper,Herriman,Holladay,Midvale,Millcreek,Murray,Riverton,Salt Lake City,Sandy,South Jordan,South Salt Lake,Taylorsville,West Jordan,West Valley City",
+            "county_shapes" :"/Users/DBurke/Documents/Layerlab/COvid19/facebook/shapefiles/ut_counties",
+            "county_shapes_name":"NAME",
+            "city_shapes" : "/Users/DBurke/Documents/Layerlab/COvid19/facebook/shapefiles/Utah_Municipal_Boundaries/",
+            "city_shapes_name" : "NAME",
+
+            "url":"https://www.facebook.com/geoinsights-portal/downloads/?id=683773062374285",
+            "repo":"/Users/DBurke/Documents/Layerlab/COvid19/pop_tiles/utah_pop_tiles/orig/",
+            "db":"/Users/DBurke/Documents/Layerlab/COvid19/dbs/utah.db" 
+        }
+}
+

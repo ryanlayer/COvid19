@@ -16,6 +16,23 @@ import json
 import argparse
 from flask import request
 
+with open('boulder_config.json') as config_file:
+    config = json.load(config_file)
+
+def timeit(method):
+    def timed(*args, **kw):
+        ts = time.time()
+        result = method(*args, **kw)
+        te = time.time()
+        if 'log_time' in kw:
+            name = kw.get('log_name', method.__name__.upper())
+            kw['log_time'][name] = int((te - ts) * 1000)
+        else:
+            print('%r  %2.2f ms' % \
+                  (method.__name__, (te - ts) * 1000))
+        return result
+    return timed
+
 class MaxSizeCache:
     def __init__(self, size):
         self.cache = {}
@@ -54,6 +71,8 @@ external_stylesheets = [dbc.themes.BOOTSTRAP,'style.css']
 default_point_color = '#69A0CB'
 trend_session_cache = MaxSizeCache(300)
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
+server = app.server
+
 
 def x_round(x):
     return round(x*4)/4
@@ -93,6 +112,8 @@ def prep_session_data(session_id,url_path_name):
 #@timeit
 def get_map(lats, lons, lat, lon, indexes):
     mapbox_access_token = open(".mapbox_token").read()
+    #mapbox_access_token = "pk.eyJ1IjoiZGV2aW5idXJrZTAiLCJhIjoiY2tiMWE3MXA5MDRnajJ4bjBrNmFhNzI2NyJ9.SfMDEZ1udv4QJOSnof4l1A"
+    ###### ---- ######
     colors = [default_point_color] * len(lats)
     opacity = [0.25] * len(lats)
     for index in indexes:
