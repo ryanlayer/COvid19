@@ -18,24 +18,17 @@ Providing social distancing situational awareness during the COVID-19 pandemic i
 $ conda env create -f environment.yml
 $ conda activate COvid19
 ```
+
 - Download Facebook Population (Tile Level) files to `pop_tiles/orig`
-- From `pop_tiles` run 
+
+- Download City/County shapefiles to `facebook/shapefiles/` (update `snake_config.json` as necessary)
+
+- Change file paths in `snake_config.json` to match your system
+- Change `base_path` in `Snakefile`
+
+Run
 ```
-$ bash fix_files.sh
-```
-- Create the database
-```
-$ python src/csv_to_sql.py --csv pop_tiles/ --db colorado.db
-rm -f colorado.db;sqlite3 colorado.db < tmp.sql
-$ rm -f colorado.db;sqlite3 colorado.db < tmp.sql
-```
-- Get scores aggregated by a field in a shapefile, here we will use cities in Colorado.
-```
-$ python src/get_all_scores_by_shape.py \
-    --db colorado.db \
-    --shapefile shapefiles/Colorado_City_Boundaries/ \
-    --shapename NAME10 \
-> colorado_city_scores.`date "+%Y%m%d"`.txt
+$ python __init__.py
 ```
 
 ## Methods

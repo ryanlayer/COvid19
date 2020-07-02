@@ -139,7 +139,6 @@ parser.add_argument('--dist',
 
 args = parser.parse_args()
 
-
 shapenames = args.shapenames.split(',')
 
 input_file = csv.reader(open(args.infile), delimiter='\t')
@@ -154,9 +153,9 @@ for row in input_file:
         baseline_header = row[baseline_range['start']:baseline_range['end']]
         crisis_header = row[crisis_range['start']:]
         continue
-
+    #print(row[shape_i])
+    #print("++++",shapenames)
     if row[shape_i] in shapenames:
-
         if row[shape_i] not in B:
             B[row[shape_i]] = []
             C[row[shape_i]] = []
@@ -193,11 +192,13 @@ T = []
 B_sum = []
 for shape in shapenames:
     print(shape)
+    #print("-",B_sum)
     if shape in B:
-
+        #print("true")
         B_s = B[shape]
         C_s = C[shape]
         baseline_mean = np.array([np.mean(b) for b in B_s])
+        #print("baseline_mean: ", baseline_mean)
         B_sum.append(np.sum(baseline_mean))
 
         baseline_mean_norm =  \
