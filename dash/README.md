@@ -26,7 +26,7 @@ $ 'http://127.0.0.1:8050/boulder' or 'http://127.0.0.1:8050/denver'
 - Verify pathname accuracy in `cities.tsv'
 - Input the name of your Dash Enterprise App into the `app_url_name` variable in `app.py`
 - Push code to Dash Enterprise Repo
-# The Dash Enterprise code is in `app.py` not `local_dash.py`. 
+### The Dash Enterprise code is in `app.py` not `local_dash.py`. 
 ```
 $ git init
 ```
@@ -47,7 +47,7 @@ $ git push plotly master
 ```
 $ 'https://dash-boulder.plotly.host/YOUR_APP_NAME/boulder' or 'https://dash-boulder.plotly.host/YOUR_APP_NAME/denver'
 ```
-# Dash Enterprise Debugging Tips
+## Dash Enterprise Debugging Tips
 - Dash Enterprise currently requires Linux or Windows OS in order to push to their repo
 - Error codes relating to certificates try the following. 
 ```
