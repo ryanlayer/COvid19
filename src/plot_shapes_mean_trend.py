@@ -153,8 +153,7 @@ for row in input_file:
         baseline_header = row[baseline_range['start']:baseline_range['end']]
         crisis_header = row[crisis_range['start']:]
         continue
-    #print(row[shape_i])
-    #print("++++",shapenames)
+
     if row[shape_i] in shapenames:
         if row[shape_i] not in B:
             B[row[shape_i]] = []
