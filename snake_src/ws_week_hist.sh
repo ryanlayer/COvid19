@@ -1,6 +1,5 @@
 set -e
 
-
 NW=$1
 src=$2
 county_name="${3}"

@@ -1,6 +1,5 @@
 set -e
 
-
 src=$1
 city_name="${2}"
 latest_city_scores=$3

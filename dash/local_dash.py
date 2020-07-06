@@ -16,8 +16,6 @@ import json
 import argparse
 from flask import request
 
-app_url_name = 'test-covid19'
-
 with open('boulder_config.json') as config_file:
     config = json.load(config_file)
 
@@ -101,14 +99,13 @@ def prep_session_data(session_id,url_path_name):
 
     cities_df = pd.read_csv('cities.tsv',sep='\t')
 
-    if url_path_name[(len(app_url_name))+1] == '/':
-        print('yes')
-        if len(url_path_name) == (len(app_url_name)+2): #if the input url is empty (+2 for the slashes)
-            print("Choosing Boulder as Default") 
-            url_path_name = 'boulder' #auto input boulder as url city 
-        else: #if not then we have a valid input url
+    if url_path_name[0] == '/':
+        if len(url_path_name) == 1:
+            print("Choosing Boulder as Default")
+            url_path_name = 'boulder'
+        else:
             print("Exchanging city...")
-            url_path_name = url_path_name[(len(app_url_name)+2):]
+            url_path_name = url_path_name[1:]
         print(url_path_name)
 
     sub = cities_df[cities_df['url'] == url_path_name]
@@ -551,15 +548,13 @@ def make_slider(url_path_name,session_id):
     if url_path_name is None:
         return 0,0,0,{}
     cities_df = pd.read_csv('cities.tsv',sep='\t') #cities dataframe
-
-    if url_path_name[(len(app_url_name))+1] == '/':
-        print('yes')
-        if len(url_path_name) == len(app_url_name):
+    if url_path_name[0] == '/':
+        if len(url_path_name) == 1:
             print("Choosing Boulder as Default")
             url_path_name = 'boulder'
         else:
-            print("Exchanging city...")
-            url_path_name = url_path_name[(len(app_url_name)+2):]
+            print('Exchanging city...')
+            url_path_name = url_path_name[1:]
         print(url_path_name)
 
     sub = cities_df[cities_df['url'] == url_path_name]

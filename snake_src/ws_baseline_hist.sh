@@ -1,6 +1,5 @@
 set -e
 
-
 county_name="${1}"
 latest_county_scores=$2
 src=$3

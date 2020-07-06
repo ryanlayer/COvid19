@@ -1,11 +1,9 @@
 set -e
 
-
 src=$1
 county_name="${2}"
 latest_county_scores=$3
 sitrep_path=$4
-
 
 python $src/hot_spot_scores.py \
     --shapename "$county_name" \

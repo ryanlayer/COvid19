@@ -1,6 +1,5 @@
 set -e
 
-
 src=$1
 latest_city_scores=$2
 sitrep_path=$3
