@@ -1,6 +1,5 @@
 set -e
 
-
 base_path=$1
 src=$2
 latest_county_scores=$3

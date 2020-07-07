@@ -1,11 +1,11 @@
 set -e
 
-
 NW=$1
 src=$2
 county_name="${3}"
 latest_county_scores=$4
 sitrep_path=$5
+
 
 for i in $( seq 1 $(( NW - 1)) ); do
     j=$(( i + 1 ))
