@@ -1,5 +1,12 @@
-url	ss	ws	trend	unique_ss	unique_ws
-arapahoe	location_data/Arapahoe_slip.csv	location_data/Arapahoe_ws.csv	location_data/Arapahoe_trend.csv	location_data/unique_Arapahoe_slip.csv	location_data/unique_Arapahoe_ws.csv
-slc	location_data/SLC_slip.csv	location_data/SLC_ws.csv	location_data/SLC_trend.csv	location_data/unique_SLC_slip.csv	location_data/unique_SLC_ws.csv
-boulder	location_data/boulder_slip.csv	location_data/boulder_ws.csv	location_data/boulder_trend.csv	location_data/unique_boulder_slip.csv	location_data/unique_boulder_ws.csv
-denver	location_data/denver_ss.csv	location_data/denver_ws.csv	location_data/denver_trend.csv	location_data/unique_denver_ss.csv	location_data/unique_denver_ws.csv
+url	ss	ws	trend	unique_ss	unique_ws		
+arapahoe	location_data/Arapahoe_slip.csv	location_data/Arapahoe_ws.csv	location_data/Arapahoe_trend.csv	location_data/unique_Arapahoe_slip.csv	location_data/unique_Arapahoe_ws.csv		
+Arapahoe	location_data/Arapahoe_slip.csv	location_data/Arapahoe_ws.csv	location_data/Arapahoe_trend.csv	location_data/unique_Arapahoe_slip.csv	location_data/unique_Arapahoe_ws.csv		
+slc	location_data/SaltLake_slip.csv	location_data/SaltLake_ws.csv	location_data/SaltLake_trend.csv	location_data/unique_SaltLake_slip.csv	location_data/unique_SaltLake_ws.csv		
+SaltLake	location_data/SaltLake_slip.csv	location_data/SaltLake_ws.csv	location_data/SaltLake_trend.csv	location_data/unique_SaltLake_slip.csv	location_data/unique_SaltLake_ws.csv		
+saltlakecity	location_data/SaltLake_slip.csv	location_data/SaltLake_ws.csv	location_data/SaltLake_trend.csv	location_data/unique_SaltLake_slip.csv	location_data/unique_SaltLake_ws.csv		
+SLC	location_data/SaltLake_slip.csv	location_data/SaltLake_ws.csv	location_data/SaltLake_trend.csv	location_data/unique_SaltLake_slip.csv	location_data/unique_SaltLake_ws.csv		
+Saltlake	location_data/SaltLake_slip.csv	location_data/SaltLake_ws.csv	location_data/SaltLake_trend.csv	location_data/unique_SaltLake_slip.csv	location_data/unique_SaltLake_ws.csv		
+denver	location_data/Denver_slip.csv	location_data/Denver_ws.csv	location_data/Denver_trend.csv	location_data/unique_Denver_slip.csv	location_data/unique_Denver_ws.csv		
+Denver	location_data/Denver_slip.csv	location_data/Denver_ws.csv	location_data/Denver_trend.csv	location_data/unique_Denver_slip.csv	location_data/unique_Denver_ws.csv		
+boulder	location_data/Boulder_slip.csv	location_data/Boulder_ws.csv	location_data/Boulder_trend.csv	location_data/unique_Boulder_slip.csv	location_data/unique_Boulder_ws.csv		
+Boulder	location_data/Boulder_slip.csv	location_data/Boulder_ws.csv	location_data/Boulder_trend.csv	location_data/unique_Boulder_slip.csv	location_data/unique_Boulder_ws.csv		
