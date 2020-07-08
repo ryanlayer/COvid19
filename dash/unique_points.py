@@ -13,7 +13,6 @@ Command line arguments
 2. weekend score file
 """
 
-
 def get_dist(p1,p2):
     return math.sqrt( ((p1[0]-p2[0])**2)+((p1[1]-p2[1])**2) )
 
@@ -37,8 +36,11 @@ def subset_df(df,col1,col2,treshold,filename):
     df[df.index.isin(final_indexes)].to_csv(filename)
 
 
-ss_df = pd.read_csv(sys.argv[1])
-ws_df = pd.read_csv(sys.argv[2])
+ss_df = pd.read_csv(sys.argv[3] + sys.argv[1])
+ws_df = pd.read_csv(sys.argv[3] + sys.argv[2])
 
-subset_df(ss_df,4,5,.75,'unique_'+sys.argv[1])
-subset_df(ws_df,-2,-1,.05,'unique_'+sys.argv[2])
+ss_final = sys.argv[4] + 'unique_' + sys.argv[1]
+ws_final = sys.argv[4] + 'unique_' + sys.argv[2]
+
+subset_df(ss_df,4,5,.75, ss_final)
+subset_df(ws_df,-2,-1,.05, ws_final)

@@ -23,6 +23,7 @@ print(today)
 
 base_path = "/Users/DBurke/Documents/Layerlab/COvid19" #CHANGE PATH
 sit_rep_path = base_path+'/sitreps/'+sit_rep_name+'/'+today +'/'
+location_data_path = base_path + "/dash/location_data/"
 src = base_path+'/src'
 latest_county_scores = sit_rep_path + sit_rep_name + '_county_scores.' + today + '.txt'
 latest_city_scores = sit_rep_path + sit_rep_name + '_city_scores.' + today + '.txt'
@@ -46,7 +47,7 @@ rule all:
 		expand(sit_rep_path + sit_rep_name + '_{type}_scores.' + today + '.txt', type = ['city', 'county']),
 		sit_rep_path + 'ws_baseline_hist.png',
 		sit_rep_path + "ws_week_hist_sentinel.txt",
-		expand(sit_rep_path + '{type}.csv', type = ['ws', 'trend', 'slip']),
+		expand(sit_rep_path + sit_rep_name +'_{type}.csv', type = ['ws', 'trend', 'slip']),
 		sit_rep_path + 'cities_mean_trends.png',
 		sit_rep_path + 'city_hot_spot.txt',
 		sit_rep_path + 'county_hot_spot.txt',
@@ -56,7 +57,11 @@ rule all:
 		sit_rep_path + 'ws_baseline_week1.png',
 		sit_rep_path + 'ws_last_3_hist.png',
 		sit_rep_path + "ws_week_week_sentinel.txt",
-		sit_rep_path + 'ws.txt'
+		sit_rep_path + 'ws.txt',
+		location_data_path + 'unique_' + sit_rep_name + '_ws.csv',
+		location_data_path + 'unique_' + sit_rep_name + '_slip.csv',
+		expand(location_data_path + sit_rep_name +'_{type}.csv', type = ['ws', 'trend', 'slip'])
+
 		
 rule db:
 	input:
@@ -198,25 +203,52 @@ rule ws_csv:
 	input:
 		latest_county_scores
 	output:
-		sit_rep_path + "ws.csv"
+		sit_rep_path + sit_rep_name + "_ws.csv"
 	run:
-		shell('bash snake_src/ws_csv.sh {src} {latest_county_scores} "{county_name}" {sit_rep_path}')
+		shell('bash snake_src/ws_csv.sh {src} {sit_rep_name} {latest_county_scores} "{county_name}" {sit_rep_path}')
 
 rule slip_csv:
 	input:
 		latest_county_scores
 	output:
-		sit_rep_path + "slip.csv"
+		sit_rep_path + sit_rep_name + "_slip.csv"
 	run:
-		shell('bash snake_src/slip_csv.sh {src} {latest_county_scores} "{county_name}" {sit_rep_path}')
+		shell('bash snake_src/slip_csv.sh {src} {sit_rep_name} {latest_county_scores} "{county_name}" {sit_rep_path}')
 
 rule trend_csv:
 	input:
 		latest_county_scores
 	output:
-		sit_rep_path + "trend.csv"
+		sit_rep_path + sit_rep_name + "_trend.csv"
 	run:
-		shell('bash snake_src/trend_csv.sh {src} {latest_county_scores} "{county_name}" {sit_rep_path}')
+		shell('bash snake_src/trend_csv.sh {src} {sit_rep_name} {latest_county_scores} "{county_name}" {sit_rep_path}')
+
+rule unique_points:
+	input:
+		expand(sit_rep_path + sit_rep_name +'_{type}.csv', type = ['ws', 'trend', 'slip'])
+	output:
+		location_data_path + 'unique_' + sit_rep_name + '_ws.csv',
+		location_data_path + 'unique_' + sit_rep_name + '_slip.csv',
+	run:
+		ws = sit_rep_name + '_ws.csv'
+		slip = sit_rep_name + '_slip.csv'
+		shell('python dash/unique_points.py {slip} {ws} {sit_rep_path} {location_data_path}')
+
+rule move_files:
+	input:
+		location_data_path + 'unique_' + sit_rep_name + '_ws.csv',
+		location_data_path + 'unique_' + sit_rep_name + '_slip.csv',
+		expand(sit_rep_path + sit_rep_name +'_{type}.csv', type = ['ws', 'trend', 'slip'])
+	output:
+		expand(location_data_path + sit_rep_name +'_{type}.csv', type = ['ws', 'trend', 'slip'])
+	run:
+		shell('cp {sit_rep_path}{sit_rep_name}_ws.csv {location_data_path}{sit_rep_name}_ws.csv')
+		shell('cp {sit_rep_path}{sit_rep_name}_trend.csv {location_data_path}{sit_rep_name}_trend.csv')
+		shell('cp {sit_rep_path}{sit_rep_name}_slip.csv {location_data_path}{sit_rep_name}_slip.csv')
+
+
+
+
 
 
 #---------TO-DO-------------#

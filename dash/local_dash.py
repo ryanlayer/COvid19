@@ -15,10 +15,10 @@ import datetime
 import json
 import argparse
 from flask import request
-
+'''
 with open('boulder_config.json') as config_file:
     config = json.load(config_file)
-
+'''
 def timeit(method):
     def timed(*args, **kw):
         ts = time.time()
@@ -129,13 +129,14 @@ def get_map(lats, lons, lat, lon, indexes):
             continue
         colors[index] = 'red'
         opacity[index] = 1.0
+
     fig = go.Figure(go.Scattermapbox(\
             lat=lats,
             lon=lons,
             mode='markers',
             marker=go.scattermapbox.Marker(size=14,
                                            opacity=opacity,
-                                           color=colors) ))
+                                           color=colors)))
 
     fig.update_layout(
         hovermode='closest',
@@ -150,6 +151,8 @@ def get_map(lats, lons, lat, lon, indexes):
             zoom=10,
         )
     )
+
+
     fig.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
     return fig
 
